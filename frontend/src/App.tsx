@@ -21,13 +21,16 @@ import LayersPanel from "./LayersPanel";
 import MapView from "./map/MapView";
 import { usePanels } from "./panels";
 import RegencyPanel from "./RegencyPanel";
-import { latestSatelliteDate } from "./satellite";
+import { formatSatelliteDate, latestSatelliteDate } from "./satellite";
 import StatusBar, { type FreshnessState } from "./StatusBar";
 import { useTheme } from "./theme";
 import { LAYER_INFO, type MapViewState, parseView, viewToParams } from "./view";
 
 // A page left open for hours must keep up with the 30-minute ingestion.
 const REFRESH_MS = 5 * 60 * 1000;
+
+/** The per-regency summary, and which filters its rows answer (see the effect that loads it). */
+type SummaryState = { rows: RegencyCount[] | null; failed: boolean; key: string };
 
 export default function App() {
   const [filters, setFilters] = useState<Filters>(() =>
@@ -39,7 +42,7 @@ export default function App() {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [provinces, setProvinces] = useState<Area[]>([]);
   const [regencies, setRegencies] = useState<Area[]>([]);
-  const [counts, setCounts] = useState<RegencyCount[]>([]);
+  const [summary, setSummary] = useState<SummaryState>({ rows: null, failed: false, key: "" });
   const [freshness, setFreshness] = useState<FreshnessState>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -114,9 +117,16 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
+    // Rows are kept through a failed refresh only while they still answer the same filters;
+    // after the filters change they would describe another question.
+    const key = filtersToSearch(filters);
     fetchRegencyCounts(filters).then(
-      (rows) => !cancelled && setCounts(rows),
-      () => !cancelled && setCounts([]),
+      (rows) => !cancelled && setSummary({ rows, failed: false, key }),
+      () =>
+        !cancelled &&
+        setSummary((previous) =>
+          previous.key === key ? { ...previous, failed: true } : { rows: null, failed: true, key },
+        ),
     );
     return () => {
       cancelled = true;
@@ -167,6 +177,7 @@ export default function App() {
           freshness={freshness}
           loadFailed={loadFailed}
           loading={loading}
+          imageryDate={view.basemap === "satellite" ? formatSatelliteDate(satelliteDate) : null}
           notes={layers.failed.map(
             (name) => `Lapisan ${LAYER_INFO[name].failedAs} gagal dimuat`,
           )}
@@ -181,7 +192,8 @@ export default function App() {
             }}
           />
           <RegencyPanel
-            counts={counts}
+            counts={summary.rows}
+            failed={summary.failed}
             open={panels.open.summary}
             onToggle={() => panels.toggle("summary")}
           />

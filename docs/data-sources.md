@@ -35,6 +35,7 @@ Loading the real data gives 5 Provinces and 56 Regencies (Kalimantan Barat 14, T
 ### Known caveats
 
 - The boundaries date from 2020. Later changes, such as the Nusantara Capital Authority area in Kalimantan Timur, are not modeled beyond what this dataset contains.
+- A Hotspot's Regency must belong to the Province it was placed in. Where a Regency polygon overlaps another Province (a border overlap or a data error) the Hotspot gets no Regency rather than one that contradicts its Province. After changing this rule or the boundaries, run the backfill to re-tag stored Hotspots.
 - Province and Regency codes are the BPS codes carried by the dataset (for example `ID61` is Kalimantan Barat).
 - The polygons are detailed (the level 1 file alone is about 100 MB uncompressed), which is fine for point-in-polygon with a spatial index.
 

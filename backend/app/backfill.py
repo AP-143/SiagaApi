@@ -10,7 +10,8 @@ RECOMPUTE_SQL = """
 WITH computed AS (
     SELECT h.id,
            province.code AS province_code,
-           (SELECT r.code FROM regencies r WHERE ST_Intersects(r.geom, h.geom)
+           (SELECT r.code FROM regencies r
+            WHERE r.province_code = province.code AND ST_Intersects(r.geom, h.geom)
             ORDER BY r.code LIMIT 1) AS regency_code,
            EXISTS (SELECT 1 FROM peatlands pl WHERE ST_Intersects(pl.geom, h.geom)) AS peat_hotspot
     FROM hotspots h

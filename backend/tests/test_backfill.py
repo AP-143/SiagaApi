@@ -148,3 +148,18 @@ def test_a_hotspot_that_leaves_the_monitored_region_is_kept_and_reported(
     assert result.changed == 0
     # Nothing is silently deleted: the history is still there, with its old tags
     assert len(hotspots(api)) == 2
+
+
+def test_a_regency_of_another_province_is_not_assigned_by_the_backfill(
+    ingest, backfill, replace_datasets, api
+):
+    ingest(csv_row(*IN_KALBAR_NO_REGENCY, "2026-10-16", 540))
+    assert only(api)["regency"] is None
+
+    wrong_province = fixtures.regency(
+        "ID6299", "Salah Provinsi", "ID62", "Kalimantan Tengah", 110.6, 0.1, 0.3
+    )
+    replace_datasets(regencies=[*fixtures.ALL_REGENCIES, wrong_province])
+    backfill()
+
+    assert only(api)["regency"] is None

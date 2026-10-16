@@ -29,6 +29,8 @@ export const GREETING =
   "Halo! Tanyakan jumlah titik api per wilayah, peringkat kabupaten/kota, kapan data diperbarui, " +
   "atau arti istilah seperti hotspot dan gambut.";
 
+// The same four questions the API suggests when it cannot answer (backend/app/chat/understanding.py,
+// SUGGESTIONS). The greeting has to work before any answer has come back, so each side keeps a copy.
 export const STARTER_QUESTIONS = [
   "Berapa titik api di Kalimantan Tengah hari ini?",
   "Kabupaten mana yang paling banyak titik apinya?",

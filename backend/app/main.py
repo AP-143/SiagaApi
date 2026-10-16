@@ -1,23 +1,23 @@
 import json
 from collections.abc import Callable
-from typing import Literal
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
+from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
-
 from pydantic import BaseModel, StringConstraints
-from typing import Annotated
 
+from app import queries
 from app.chat.service import answer_question
 from app.config import load_settings
 from app.knowledge import load_knowledge
-from app.queries import STALE_AFTER, hotspot_where, last_ingestion, regency_counts
+from app.queries import WindowKey, hotspot_where
 from app.ratelimit import RateLimiter
 from app.schema import ensure_schema
+from app.timefmt import iso_utc
 
 MAX_QUESTION_LENGTH = 500
 
@@ -90,7 +90,7 @@ def create_app(
         return {"status": "ok", "database": "ok"}
 
     def hotspot_filters(
-        window: Literal["24h", "48h", "7d"] = "24h",
+        window: WindowKey = "24h",
         province: str | None = None,
         regency: str | None = None,
         min_confidence: Literal["low", "nominal", "high"] = "nominal",
@@ -108,20 +108,14 @@ def create_app(
     @app.get("/freshness")
     def freshness(request: Request):
         with request.app.state.pool.connection() as conn:
-            last_updated = last_ingestion(conn)
-        if last_updated is None:
-            # Never ingested: there is nothing to trust, so say so.
-            return {"last_updated": None, "stale": True}
-        return {
-            "last_updated": last_updated.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "stale": clock() - last_updated > STALE_AFTER,
-        }
+            current = queries.freshness(conn, clock())
+        return {"last_updated": iso_utc(current.last_updated), "stale": current.stale}
 
     @app.get("/hotspots/counts")
     def hotspot_counts(request: Request, filters: tuple[str, list] = Depends(hotspot_filters)):
         where, params = filters
         with request.app.state.pool.connection() as conn:
-            rows = regency_counts(conn, where, params)
+            rows = queries.regency_counts(conn, where, params)
         return [
             {
                 "regency": None if r_code is None else {"code": r_code, "name": r_name},
@@ -135,18 +129,7 @@ def create_app(
     def hotspots(request: Request, filters: tuple[str, list] = Depends(hotspot_filters)):
         where, params = filters
         with request.app.state.pool.connection() as conn:
-            rows = conn.execute(
-                f"""
-                SELECT h.id, h.longitude, h.latitude, h.acquired_at, h.satellite, h.confidence,
-                       h.province_code, p.name, h.regency_code, r.name, h.peat_hotspot
-                FROM hotspots h
-                JOIN provinces p ON p.code = h.province_code
-                LEFT JOIN regencies r ON r.code = h.regency_code
-                WHERE {where}
-                ORDER BY h.acquired_at DESC, h.id
-                """,
-                params,
-            ).fetchall()
+            rows = queries.hotspot_rows(conn, where, params)
         features = []
         for (
             id_, lon, lat, acquired_at, satellite, confidence, p_code, p_name, r_code, r_name, peat
@@ -157,9 +140,7 @@ def create_app(
                     "geometry": {"type": "Point", "coordinates": [lon, lat]},
                     "properties": {
                         "id": id_,
-                        "acquired_at": acquired_at.astimezone(timezone.utc).strftime(
-                            "%Y-%m-%dT%H:%M:%SZ"
-                        ),
+                        "acquired_at": iso_utc(acquired_at),
                         "satellite": satellite,
                         "confidence": confidence,
                         "province": {"code": p_code, "name": p_name},
@@ -180,10 +161,7 @@ def create_app(
     @app.get("/layers/peatlands")
     def peatland_layer(request: Request):
         with request.app.state.pool.connection() as conn:
-            rows = conn.execute(
-                "SELECT ST_AsGeoJSON(ST_SimplifyPreserveTopology(geom, 0.0003), 5) FROM peatlands"
-                " ORDER BY id"
-            ).fetchall()
+            rows = queries.peatland_geometries(conn)
         return feature_collection(
             [
                 {"type": "Feature", "properties": {}, "geometry": json.loads(geometry)}
@@ -194,9 +172,7 @@ def create_app(
     @app.get("/layers/provinces")
     def province_layer(request: Request):
         with request.app.state.pool.connection() as conn:
-            rows = conn.execute(
-                "SELECT code, name, ST_AsGeoJSON(geom_simple, 5) FROM provinces ORDER BY code"
-            ).fetchall()
+            rows = queries.province_geometries(conn)
         return feature_collection(
             [
                 {
@@ -211,10 +187,7 @@ def create_app(
     @app.get("/layers/regencies")
     def regency_layer(request: Request):
         with request.app.state.pool.connection() as conn:
-            rows = conn.execute(
-                "SELECT code, name, province_code, ST_AsGeoJSON(geom_simple, 5)"
-                " FROM regencies ORDER BY code"
-            ).fetchall()
+            rows = queries.regency_geometries(conn)
         return feature_collection(
             [
                 {
@@ -229,21 +202,15 @@ def create_app(
     @app.get("/provinces")
     def provinces(request: Request):
         with request.app.state.pool.connection() as conn:
-            rows = conn.execute("SELECT code, name FROM provinces ORDER BY name").fetchall()
+            rows = queries.provinces(conn)
         return [{"code": code, "name": name} for code, name in rows]
 
     @app.get("/provinces/{province_code}/regencies")
     def regencies(province_code: str, request: Request):
         with request.app.state.pool.connection() as conn:
-            exists = conn.execute(
-                "SELECT 1 FROM provinces WHERE code = %s", (province_code,)
-            ).fetchone()
-            if exists is None:
-                raise HTTPException(status_code=404, detail="Province not found")
-            rows = conn.execute(
-                "SELECT code, name FROM regencies WHERE province_code = %s ORDER BY name",
-                (province_code,),
-            ).fetchall()
+            rows = queries.regencies_of(conn, province_code)
+        if rows is None:
+            raise HTTPException(status_code=404, detail="Province not found")
         return [{"code": code, "name": name} for code, name in rows]
 
     return app

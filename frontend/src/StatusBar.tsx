@@ -10,6 +10,8 @@ type Props = {
   loading: boolean;
   /** Minor problems, such as a decorative map layer that did not load. Not worth an alarm. */
   notes?: string[];
+  /** The day of the satellite imagery behind the map, while it is in use. Always in view. */
+  imageryDate?: string | null;
 };
 
 function Alert({ children }: { children: string }) {
@@ -22,7 +24,7 @@ function Alert({ children }: { children: string }) {
 }
 
 /** When the data was last updated, and a loud warning whenever it cannot be trusted as current. */
-export default function StatusBar({ freshness, loadFailed, loading, notes = [] }: Props) {
+export default function StatusBar({ freshness, loadFailed, loading, notes = [], imageryDate = null }: Props) {
   const known = freshness && freshness !== "unknown" ? freshness : null;
   const lastUpdated = known?.last_updated ?? null;
   return (
@@ -49,6 +51,7 @@ export default function StatusBar({ freshness, loadFailed, loading, notes = [] }
       {loadFailed && (
         <Alert>Tidak dapat memuat data terbaru dari server. Data yang tampil mungkin sudah lama.</Alert>
       )}
+      {imageryDate && <p className="pill pill-note">Citra satelit: {imageryDate}</p>}
       {notes.map((note) => (
         <p key={note} className="pill pill-note" aria-live="polite">
           {note}

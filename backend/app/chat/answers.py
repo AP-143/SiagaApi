@@ -4,13 +4,13 @@ computes, estimates or recalls one."""
 from datetime import date, datetime, timedelta, timezone
 
 from app.chat.places import Area
-from app.chat.understanding import SUGGESTIONS
+from app.chat.understanding import SUGGESTIONS, RankingUnit, Scope
 from app.knowledge import Passage
+from app.queries import TIME_WINDOWS, Freshness
+from app.timefmt import iso_utc
 
 WIB = timezone(timedelta(hours=7))  # Indonesia West Time has no daylight saving
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
-
-WINDOW_TEXT = {"24h": "24 jam", "48h": "48 jam", "7d": "7 hari"}
 
 CAVEAT = "Ini deteksi satelit, belum tentu kebakaran yang sudah terkonfirmasi."
 
@@ -27,15 +27,11 @@ def format_wib(moment: datetime) -> str:
     return f"{local.day} {MONTHS[local.month - 1]} {local.year}, {local:%H.%M} WIB"
 
 
-def iso_utc(moment: datetime | None) -> str | None:
-    return None if moment is None else moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def freshness_sentence(last_updated: datetime | None, stale: bool) -> str:
-    if last_updated is None:
+def freshness_sentence(freshness: Freshness) -> str:
+    if freshness.last_updated is None:
         return "Data belum pernah diperbarui, jadi angka ini mungkin kosong."
-    sentence = f"Data terakhir diperbarui {format_wib(last_updated)}."
-    if stale:
+    sentence = f"Data terakhir diperbarui {format_wib(freshness.last_updated)}."
+    if freshness.stale:
         sentence += " Peringatan: data mungkin usang, jadi angka terbaru bisa berbeda."
     return sentence
 
@@ -50,63 +46,55 @@ def area_data(area: Area | None) -> dict:
     return {"type": "region", "name": "Kalimantan"} if area is None else area.as_data()
 
 
-def count_reply(
-    *,
-    count: int,
-    peat_count: int | None,
-    area: Area | None,
-    window: str,
-    peat_only: bool,
-    include_low: bool,
-    last_updated: datetime | None,
-    stale: bool,
-) -> dict:
-    where = f"di lahan gambut di {area_text(area)}" if peat_only else f"di {area_text(area)}"
-    parts = [f"Dalam {WINDOW_TEXT[window]} terakhir ada {number(count)} titik api {where}."]
-    if peat_count is not None and not peat_only:
+def _scope_data(scope: Scope, freshness: Freshness) -> dict:
+    """The fields every count and ranking answer carries about what it was counted over."""
+    return {
+        "area": area_data(scope.area),
+        "window": scope.window,
+        "peat_only": scope.peat_only,
+        "include_low": scope.include_low,
+        "last_updated": iso_utc(freshness.last_updated),
+        "stale": freshness.stale,
+    }
+
+
+def count_reply(*, count: int, peat_count: int | None, scope: Scope, freshness: Freshness) -> dict:
+    where = (
+        f"di lahan gambut di {area_text(scope.area)}" if scope.peat_only else f"di {area_text(scope.area)}"
+    )
+    window = TIME_WINDOWS[scope.window].label
+    parts = [f"Dalam {window} terakhir ada {number(count)} titik api {where}."]
+    if peat_count is not None and not scope.peat_only:
         parts.append(f"{number(peat_count)} di antaranya di lahan gambut.")
     parts.append(
         "Hitungan ini termasuk deteksi dengan kepercayaan rendah."
-        if include_low
+        if scope.include_low
         else "Hitungan ini tidak termasuk deteksi dengan kepercayaan rendah."
     )
-    parts.append(freshness_sentence(last_updated, stale))
+    parts.append(freshness_sentence(freshness))
     parts.append(CAVEAT)
     return {
         "kind": "count",
         "answer": " ".join(parts),
-        "data": {
-            "count": count,
-            "peat_count": peat_count,
-            "area": area_data(area),
-            "window": window,
-            "peat_only": peat_only,
-            "include_low": include_low,
-            "last_updated": iso_utc(last_updated),
-            "stale": stale,
-        },
+        "data": {"count": count, "peat_count": peat_count, **_scope_data(scope, freshness)},
     }
 
 
 def ranking_reply(
     *,
     ranking: list[dict],
-    unit: str,
+    unit: RankingUnit,
     unassigned: int,
-    area: Area | None,
-    window: str,
-    peat_only: bool,
-    include_low: bool,
-    last_updated: datetime | None,
-    stale: bool,
+    scope: Scope,
+    freshness: Freshness,
 ) -> dict:
-    unit_text = "provinsi" if unit == "province" else "kabupaten/kota"
-    scope = " di lahan gambut" if peat_only else ""
+    unit_text = "provinsi" if unit is RankingUnit.PROVINCE else "kabupaten/kota"
+    in_peat = " di lahan gambut" if scope.peat_only else ""
     shown = ranking[:MAX_RANKED]
     top = f"{MAX_RANKED} teratas " if len(ranking) > MAX_RANKED else ""
     header = (
-        f"Peringkat {top}{unit_text} berdasarkan jumlah titik api{scope} di {area_text(area)} "
-        f"dalam {WINDOW_TEXT[window]} terakhir:"
+        f"Peringkat {top}{unit_text} berdasarkan jumlah titik api{in_peat} di {area_text(scope.area)} "
+        f"dalam {TIME_WINDOWS[scope.window].label} terakhir:"
     )
     if shown:
         lines = [f"{i}. {row['name']}: {number(row['count'])} titik api" for i, row in enumerate(shown, 1)]
@@ -115,30 +103,25 @@ def ranking_reply(
     parts = [header, *lines]
     if unassigned:
         parts.append(f"Ditambah {number(unassigned)} titik api yang tidak berada di kabupaten/kota mana pun.")
-    parts.append(freshness_sentence(last_updated, stale))
+    parts.append(freshness_sentence(freshness))
     parts.append(CAVEAT)
     return {
         "kind": "ranking",
         "answer": "\n".join(parts),
         "data": {
             "ranking": shown,
-            "unit": unit,
+            "unit": str(unit),
             "unassigned": unassigned,
-            "area": area_data(area),
-            "window": window,
-            "peat_only": peat_only,
-            "include_low": include_low,
-            "last_updated": iso_utc(last_updated),
-            "stale": stale,
+            **_scope_data(scope, freshness),
         },
     }
 
 
-def freshness_reply(last_updated: datetime | None, stale: bool) -> dict:
+def freshness_reply(freshness: Freshness) -> dict:
     return {
         "kind": "freshness",
-        "answer": freshness_sentence(last_updated, stale),
-        "data": {"last_updated": iso_utc(last_updated), "stale": stale},
+        "answer": freshness_sentence(freshness),
+        "data": {"last_updated": iso_utc(freshness.last_updated), "stale": freshness.stale},
     }
 
 
@@ -165,10 +148,12 @@ def unknown_place_reply(phrase: str | None) -> dict:
 
 
 def unsupported_window_reply() -> dict:
+    labels = [window.label for window in TIME_WINDOWS.values()]
+    offered = f"{', '.join(labels[:-1])}, atau {labels[-1]}"
     return {
         "kind": "unsupported_window",
-        "answer": "Saya hanya bisa menghitung untuk 24 jam, 48 jam, atau 7 hari terakhir. Mau pakai yang mana?",
-        "data": {"windows": ["24h", "48h", "7d"]},
+        "answer": f"Saya hanya bisa menghitung untuk {offered} terakhir. Mau pakai yang mana?",
+        "data": {"windows": list(TIME_WINDOWS)},
     }
 
 

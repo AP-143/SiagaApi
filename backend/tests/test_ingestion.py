@@ -1,9 +1,12 @@
 import logging
 
+import psycopg
 import pytest
 
+from app.boundaries import load_boundaries
 from app.firms import FirmsError
 from app.ingestion import run_ingestion, run_on_schedule
+from tests import fixtures
 from tests.fake_firms import csv_row, firms_csv
 from tests.helpers import (
     IN_KALBAR_NO_REGENCY,
@@ -188,3 +191,43 @@ def test_the_scheduler_keeps_running_after_a_failed_run(api, fake_firms, setting
     assert sleeps == [1800]
     assert len(hotspots(api)) == 1
     assert SECRET_KEY not in caplog.text
+
+
+def test_a_regency_that_belongs_to_another_province_is_never_assigned(
+    api, database_url, fake_firms, settings_for
+):
+    # A Regency polygon drawn over the wrong Province (a border overlap or a data error) must not
+    # leave a Hotspot whose Province and Regency disagree.
+    wrong_province = fixtures.regency(
+        "ID6299", "Salah Provinsi", "ID62", "Kalimantan Tengah", 110.6, 0.1, 0.3
+    )
+    with psycopg.connect(database_url) as conn:
+        load_boundaries(conn, fixtures.ALL_PROVINCES, [*fixtures.ALL_REGENCIES, wrong_province])
+    fake_firms.respond(
+        "VIIRS_SNPP_NRT", firms_csv(csv_row(*IN_KALBAR_NO_REGENCY, "2026-10-16", 540))
+    )
+
+    run_ingestion(settings_for)
+
+    [feature] = hotspots(api)
+    assert feature["properties"]["province"]["code"] == "ID61"
+    assert feature["properties"]["regency"] is None
+
+
+def test_the_log_of_an_unexpected_failure_never_carries_the_exception_text(
+    api, settings_for, monkeypatch, caplog
+):
+    # An unexpected error can echo anything it was given, a key in a URL or a connection string.
+    caplog.set_level(logging.DEBUG)
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError(f"cannot reach https://example.invalid/?MAP_KEY={SECRET_KEY}")
+
+    monkeypatch.setattr("app.ingestion.fetch_detections", explode)
+
+    run_on_schedule(settings_for, interval_seconds=1, sleep=lambda _seconds: None, max_runs=2)
+
+    assert SECRET_KEY not in caplog.text
+    assert "cannot reach" not in caplog.text
+    # The failure is still visible, and says what kind of failure it was.
+    assert "RuntimeError" in caplog.text

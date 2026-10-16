@@ -6,13 +6,15 @@ produce the same structured request, and the numbers would still come from the d
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import StrEnum
 
 from app.chat.places import Area, PlaceIndex, Resolution, normalize
+from app.queries import TIME_WINDOWS
 
 FRESHNESS = re.compile(r"\b(diperbarui|diperbaharui|pembaruan|update|segar|usang|kedaluwarsa|kadaluarsa)\b")
 FREQUENCY = re.compile(r"\b(sering|seberapa|frekuensi|berapa\s+kali|setiap)\b")
-HOTSPOT_WORDS =re.compile(r"titik\s+(api|panas)|\bhotspots?\b|\bkarhutla\b|\bkebakaran\b")
+HOTSPOT_WORDS = re.compile(r"titik\s+(api|panas)|\bhotspots?\b|\bkarhutla\b|\bkebakaran\b")
 RANKING = re.compile(r"terbanyak|paling\s+banyak|tertinggi|teratas|peringkat|ranking|urutan|terparah|paling\s+parah")
 # Words that ask for an explanation, wherever they sit: "titik panas itu apa sih?" has no
 # explanation word at the start but is still not a request for a number.
@@ -35,26 +37,51 @@ WORD_WINDOWS = [
 ]
 # Periods the map cannot show, so we refuse them rather than answer a different question.
 UNSUPPORTED_PERIOD = re.compile(r"\b(bulan|tahun|kemarin|minggu\s+(ini|lalu)|pekan\s+(ini|lalu))\b")
-WINDOW_BY_HOURS = {24: "24h", 48: "48h", 168: "7d"}
+# Hours to window key, read from the one table of windows.
+WINDOW_BY_HOURS = {int(w.delta.total_seconds() // 3600): key for key, w in TIME_WINDOWS.items()}
 
+# The same four questions the web app offers in its greeting (frontend/src/chat.ts, STARTER_QUESTIONS);
+# the greeting must work before any answer has come back, so the web app keeps its own copy.
 SUGGESTIONS = [
     "Berapa titik api di Kalimantan Tengah hari ini?",
     "Kabupaten mana yang paling banyak titik apinya?",
-    "Berapa titik api di lahan gambut dalam 7 hari terakhir?",
+    "Apa itu titik api (hotspot)?",
     "Kapan data terakhir diperbarui?",
 ]
 
 
-@dataclass
-class Question:
-    intent: str  # count, ranking, freshness, unsupported, unsupported_window, clarify, unknown_place
+class Intent(StrEnum):
+    COUNT = "count"
+    RANKING = "ranking"
+    FRESHNESS = "freshness"
+    UNSUPPORTED = "unsupported"
+    UNSUPPORTED_WINDOW = "unsupported_window"
+    CLARIFY = "clarify"
+    UNKNOWN_PLACE = "unknown_place"
+
+
+class RankingUnit(StrEnum):
+    REGENCY = "regency"
+    PROVINCE = "province"
+
+
+@dataclass(frozen=True)
+class Scope:
+    """What a count or ranking is about: the same four choices the map's filters make."""
+
     area: Area | None = None
-    candidates: list[Area] | None = None
-    unknown_phrase: str | None = None
     window: str = "24h"
     peat_only: bool = False
     include_low: bool = False
-    ranking_unit: str = "regency"
+
+
+@dataclass
+class Question:
+    intent: Intent
+    scope: Scope = field(default_factory=Scope)
+    candidates: list[Area] | None = None
+    unknown_phrase: str | None = None
+    ranking_unit: RankingUnit = RankingUnit.REGENCY
 
 
 def _window(text: str) -> str | None:
@@ -83,34 +110,34 @@ def understand(message: str, places: PlaceIndex) -> Question:
     if not asks_how_often and (
         FRESHNESS.search(text) or ("kapan" in text.split() and "data" in text.split())
     ):
-        return Question("freshness")
+        return Question(Intent.FRESHNESS)
 
     talks_about_hotspots = bool(HOTSPOT_WORDS.search(text))
     if not talks_about_hotspots:
-        return Question("unsupported")
+        return Question(Intent.UNSUPPORTED)
     wants_explanation = (STRONG_EXPLAIN_WORD.search(text) and not HOW_MANY.search(text)) or (
         EXPLAIN_WORD.search(text) and not QUANTITY.search(text)
     )
     if wants_explanation and not RANKING.search(text):
-        return Question("unsupported")  # an explanation is wanted; that needs the knowledge base
+        return Question(Intent.UNSUPPORTED)  # an explanation is wanted; that needs the knowledge base
 
     window = _window(text)
     if window is None:
-        return Question("unsupported_window")
+        return Question(Intent.UNSUPPORTED_WINDOW)
 
     resolution: Resolution = places.resolve(message)
     if resolution.kind == "ambiguous":
-        return Question("clarify", candidates=resolution.candidates)
+        return Question(Intent.CLARIFY, candidates=resolution.candidates)
     if resolution.kind == "unknown":
-        return Question("unknown_place", unknown_phrase=resolution.unknown_phrase)
+        return Question(Intent.UNKNOWN_PLACE, unknown_phrase=resolution.unknown_phrase)
 
-    common = dict(
+    scope = Scope(
         area=resolution.area,
         window=window,
         peat_only=bool(PEAT.search(text)),
         include_low=bool(LOW_CONFIDENCE.search(text)),
     )
     if RANKING.search(text) and not (resolution.area and resolution.area.type == "regency"):
-        unit = "province" if PROVINCE_WORD.search(text) else "regency"
-        return Question("ranking", ranking_unit=unit, **common)
-    return Question("count", **common)
+        unit = RankingUnit.PROVINCE if PROVINCE_WORD.search(text) else RankingUnit.REGENCY
+        return Question(Intent.RANKING, scope=scope, ranking_unit=unit)
+    return Question(Intent.COUNT, scope=scope)

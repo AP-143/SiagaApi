@@ -334,3 +334,32 @@ test("NASA GIBS is credited for the satellite imagery", async () => {
 
   expect(await screen.findByText(/NASA FIRMS/)).toHaveTextContent("NASA EOSDIS GIBS");
 });
+
+// ---- The imagery date is part of the page, not of one panel ------------------------------------
+
+test("the date of the satellite imagery is visible even when every panel is closed", async () => {
+  // On a phone every panel starts closed, and the address can bring satellite imagery back.
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: true,
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
+  setup("/?base=satellite");
+  await waitFor(() => expect(map()).toBeDefined());
+
+  expect(screen.getByRole("button", { name: "Lapisan" })).toHaveAttribute("aria-expanded", "false");
+  expect(screen.getByText(/Citra satelit: 15 Okt 2026/)).toBeInTheDocument();
+});
+
+test("the imagery date appears when satellite is chosen and goes when the map is chosen again", async () => {
+  setup();
+  await waitFor(() => expect(map()).toBeDefined());
+  expect(screen.queryByText(/Citra satelit: \d+ [A-Za-z]+ \d{4}/)).toBeNull();
+
+  await userEvent.click(screen.getByRole("radio", { name: "Satelit" }));
+  expect(screen.getByText(/Citra satelit: 15 Okt 2026/)).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("radio", { name: "Peta" }));
+  expect(screen.queryByText(/Citra satelit: \d+ [A-Za-z]+ \d{4}/)).toBeNull();
+});
