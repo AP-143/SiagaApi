@@ -9,6 +9,7 @@ export default function Brand({ theme, onToggleTheme }: Props) {
   const next = theme === "dark" ? "terang" : "gelap";
   return (
     <header className="card brand">
+      <a className="brand-home" href="/" aria-label="Kembali ke beranda SiagaApi">
       <span className="brand-mark">
         <LogoMark />
       </span>
@@ -18,6 +19,7 @@ export default function Brand({ theme, onToggleTheme }: Props) {
         </h1>
         <p>Pantau titik api Kalimantan</p>
       </div>
+      </a>
       <button
         type="button"
         className="icon-button"

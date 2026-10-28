@@ -34,3 +34,10 @@ test("a line under the name says what the map is for", () => {
 
   expect(screen.getByText("Pantau titik api Kalimantan")).toBeInTheDocument();
 });
+
+test("the name leads back to the Landing", () => {
+  setReducedMotion(true);
+  render(<Brand theme="light" onToggleTheme={() => {}} />);
+
+  expect(screen.getByRole("link", { name: /kembali ke beranda/i })).toHaveAttribute("href", "/");
+});

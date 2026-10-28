@@ -19,7 +19,7 @@ import { useLayerData } from "./layers";
 import Legend from "./Legend";
 import LayersPanel from "./LayersPanel";
 import MapView from "./map/MapView";
-import { usePanels } from "./panels";
+import { useDismissPopovers, usePanels } from "./panels";
 import RegencyPanel from "./RegencyPanel";
 import { formatSatelliteDate, latestSatelliteDate } from "./satellite";
 import StatusBar, { type FreshnessState } from "./StatusBar";
@@ -48,6 +48,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [refreshTick, setRefreshTick] = useState(0);
   const panels = usePanels();
+  useDismissPopovers(Object.values(panels.open).some(Boolean), panels.closeAll);
   const { theme, toggle: toggleTheme } = useTheme();
   const layers = useLayerData(view.layers);
   // Fixed for the visit, so the imagery and the date shown beside it can never disagree.

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { isBarViewport, isPhoneViewport } from "./viewport";
 
@@ -32,5 +32,32 @@ export function usePanels() {
     if (isPhoneViewport()) setOpen(ALL_CLOSED);
   }
 
-  return { open, toggle, closeOnPhone };
+  const closeAll = useCallback(() => setOpen(ALL_CLOSED), []);
+
+  return { open, toggle, closeOnPhone, closeAll };
+}
+
+/**
+ * On a wide screen a panel is a popover, so it closes the way a popover does: Escape (with focus
+ * back on its button) or a press anywhere outside the bars. Pressing inside a popover keeps it open.
+ */
+export function useDismissPopovers(anyOpen: boolean, closeAll: () => void) {
+  useEffect(() => {
+    if (!anyOpen || !isBarViewport()) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const button = document.querySelector<HTMLElement>('.panel-toggle[aria-expanded="true"]');
+      closeAll();
+      button?.focus();
+    };
+    const onPress = (event: PointerEvent) => {
+      if (!(event.target as Element | null)?.closest?.(".overlay")) closeAll();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPress);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPress);
+    };
+  }, [anyOpen, closeAll]);
 }

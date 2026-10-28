@@ -68,7 +68,7 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
   return (
     <MotionFeatures>
     <section className="card chat-panel">
-      <Collapsible label="Tanya" icon={<ChatIcon />} open={open} onToggle={onToggle}>
+      <Collapsible label="Tanya" title="Tanya" icon={<ChatIcon />} open={open} onToggle={onToggle}>
         <div className="chat-log" role="log" aria-label="Percakapan" aria-live="polite" ref={logRef}>
           {messages.map((message) => (
             <m.div

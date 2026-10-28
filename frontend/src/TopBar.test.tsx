@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
@@ -62,4 +62,45 @@ test("on a wide screen opening a panel closes the one that was open", async () =
   expect(screen.getByRole("button", { name: "Filter" })).toHaveAttribute("aria-expanded", "false");
   expect(screen.getByRole("button", { name: "Ringkasan" })).toHaveAttribute("aria-expanded", "true");
   await waitFor(() => expect(screen.queryByLabelText("Provinsi")).toBeNull());
+});
+
+test("Escape closes the open panel and puts focus back on its button", async () => {
+  setup();
+  const filter = screen.getByRole("button", { name: "Filter" });
+  await userEvent.click(filter);
+  expect(await screen.findByLabelText("Provinsi")).toBeInTheDocument();
+
+  await userEvent.keyboard("{Escape}");
+
+  expect(filter).toHaveAttribute("aria-expanded", "false");
+  expect(filter).toHaveFocus();
+});
+
+test("pressing outside the panels closes the open one, pressing inside does not", async () => {
+  setup();
+  await userEvent.click(screen.getByRole("button", { name: "Filter" }));
+  const province = await screen.findByLabelText("Provinsi");
+
+  fireEvent.pointerDown(province);
+  expect(screen.getByRole("button", { name: "Filter" })).toHaveAttribute("aria-expanded", "true");
+
+  fireEvent.pointerDown(document.body);
+  expect(screen.getByRole("button", { name: "Filter" })).toHaveAttribute("aria-expanded", "false");
+});
+
+test("each panel button says which content it controls", async () => {
+  setup();
+  const filter = screen.getByRole("button", { name: "Filter" });
+  await userEvent.click(filter);
+  const body = await screen.findByLabelText("Provinsi");
+
+  expect(filter.getAttribute("aria-controls")).toBeTruthy();
+  expect(body.closest(`[id="${filter.getAttribute("aria-controls")}"]`)).not.toBeNull();
+});
+
+test("on a wide screen the legend starts as just its title", async () => {
+  setup();
+  await waitFor(() => expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1));
+
+  expect(screen.getByRole("button", { name: "Keterangan" })).toHaveAttribute("aria-expanded", "false");
 });
