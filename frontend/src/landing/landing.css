@@ -41,7 +41,7 @@ body:has(.landing) {
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--rust);
+  color: var(--rust-text);
 }
 
 /* A fixed film-grain layer over everything: fractal noise, multiplied into the paper. */
@@ -53,7 +53,7 @@ body:has(.landing) {
   pointer-events: none;
   mix-blend-mode: multiply;
   opacity: 0.38;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.26 0 0 0 0 0.16 0 0 0 0 0.16 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: var(--grain-image);
 }
 
 

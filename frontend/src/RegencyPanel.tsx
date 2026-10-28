@@ -1,6 +1,9 @@
+import { m, useReducedMotion } from "motion/react";
+
 import type { RegencyCount } from "./api";
 import Collapsible from "./Collapsible";
 import { ListIcon } from "./icons";
+import MotionFeatures from "./MotionFeatures";
 
 type Props = {
   /** null until the first answer, or when the last request failed with nothing to fall back on. */
@@ -17,7 +20,9 @@ export default function RegencyPanel({ counts: rows, failed, open, onToggle }: P
   const counts = rows ?? [];
   const total = counts.reduce((sum, row) => sum + row.count, 0);
   const busiest = Math.max(1, ...counts.map((row) => row.count));
+  const reduced = useReducedMotion();
   return (
+    <MotionFeatures>
     <section className="card regency-panel" aria-label="Titik api per kabupaten/kota">
       <Collapsible label="Ringkasan" icon={<ListIcon />} open={open} onToggle={onToggle}>
         <h2>Titik api per kabupaten/kota</h2>
@@ -36,8 +41,14 @@ export default function RegencyPanel({ counts: rows, failed, open, onToggle }: P
               Total: <strong>{formatCount(total)}</strong> titik api
             </p>
             <ul>
-              {counts.map((row) => (
-                <li key={row.regency?.code ?? `unknown-${row.province.code}`}>
+              {counts.map((row, index) => (
+                <m.li
+                  key={row.regency?.code ?? `unknown-${row.province.code}`}
+                  // The rows fade in one after another; a long list never makes anyone wait more than half a second.
+                  initial={reduced ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.25 + Math.min(index, 12) * 0.04 }}
+                >
                   <span className="name">{row.regency?.name ?? "Kabupaten/kota tidak diketahui"}</span>
                   <span className="count">{formatCount(row.count)}</span>
                   <span className="province">{row.province.name}</span>
@@ -47,12 +58,13 @@ export default function RegencyPanel({ counts: rows, failed, open, onToggle }: P
                       style={{ width: `${Math.max(2, Math.round((row.count / busiest) * 100))}%` }}
                     />
                   </span>
-                </li>
+                </m.li>
               ))}
             </ul>
           </>
         )}
       </Collapsible>
     </section>
+    </MotionFeatures>
   );
 }

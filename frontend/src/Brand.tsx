@@ -1,5 +1,6 @@
 import { MoonIcon, SunIcon } from "./icons";
 import LogoMark from "./LogoMark";
+import SplitText from "./landing/SplitText";
 import type { Theme } from "./theme";
 
 type Props = { theme: Theme; onToggleTheme: () => void };
@@ -12,7 +13,9 @@ export default function Brand({ theme, onToggleTheme }: Props) {
         <LogoMark />
       </span>
       <div className="brand-text">
-        <h1 translate="no">SiagaApi</h1>
+        <h1 translate="no">
+          <SplitText text="SiagaApi" as="span" on="load" stagger={0.06} delay={0.15} rise={0.4} tilt={0} duration={0.7} />
+        </h1>
         <p>Pantau titik api Kalimantan</p>
       </div>
       <button

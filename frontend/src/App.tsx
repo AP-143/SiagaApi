@@ -146,6 +146,7 @@ export default function App() {
 
   return (
     <main className="app">
+      <div className="grain" aria-hidden="true" />
       <MapView
         hotspots={hotspots}
         theme={theme}
