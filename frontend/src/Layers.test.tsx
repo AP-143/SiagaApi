@@ -296,6 +296,34 @@ test("boundary lines stay light on satellite imagery so they can be seen", async
   expect(isLight(lineColor())).toBe(true);
 });
 
+test("each boundary line has a dark casing under it, so it still shows over white clouds", async () => {
+  setup();
+  await waitFor(() => expect(map().layerIds()).toContain("hotspots"));
+
+  const order = map().layerIds();
+  for (const [casing, line] of [
+    ["province-casing", "province-lines"],
+    ["regency-casing", "regency-lines"],
+  ]) {
+    expect(order.indexOf(casing)).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf(casing)).toBeLessThan(order.indexOf(line));
+    expect(isLight(map().paintValue(casing, "line-color") as string)).toBe(false);
+  }
+});
+
+test("a casing is shown and hidden with the boundary it belongs to", async () => {
+  setup("/?layers=gambut");
+  await waitFor(() => expect(map()).toBeDefined());
+
+  expect(map().layerVisibility("province-casing")).toBe("none");
+  expect(map().layerVisibility("regency-casing")).toBe("none");
+
+  await userEvent.click(screen.getByLabelText("Batas provinsi"));
+
+  expect(map().layerVisibility("province-casing")).toBe("visible");
+  expect(map().layerVisibility("regency-casing")).toBe("none");
+});
+
 // ---- Legend and credits --------------------------------------------------------------------------
 
 test("the legend explains each layer that is switched on", async () => {

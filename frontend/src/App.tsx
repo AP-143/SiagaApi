@@ -173,7 +173,6 @@ export default function App() {
         />
       </div>
       <div className="overlay overlay-bottom">
-        <Legend view={view} />
         <StatusBar
           freshness={freshness}
           loadFailed={loadFailed}
@@ -184,6 +183,12 @@ export default function App() {
           )}
         />
         <div className="sheet">
+          <RegencyPanel
+            counts={summary.rows}
+            failed={summary.failed}
+            open={panels.open.summary}
+            onToggle={() => panels.toggle("summary")}
+          />
           <ChatPanel
             open={panels.open.chat}
             onToggle={() => panels.toggle("chat")}
@@ -192,13 +197,9 @@ export default function App() {
               panels.closeOnPhone();
             }}
           />
-          <RegencyPanel
-            counts={summary.rows}
-            failed={summary.failed}
-            open={panels.open.summary}
-            onToggle={() => panels.toggle("summary")}
-          />
         </div>
+        {/* After the bar in the page, so Tab goes through the bar first; they are drawn in the corners. */}
+        <Legend view={view} />
         <Credits />
       </div>
     </main>

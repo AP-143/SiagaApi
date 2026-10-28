@@ -104,3 +104,18 @@ test("the legend starts as just its title", async () => {
 
   expect(screen.getByRole("button", { name: "Keterangan" })).toHaveAttribute("aria-expanded", "false");
 });
+
+test("Tab moves through the bar in the order the buttons are drawn", async () => {
+  setup();
+  const names = ["Filter", "Lapisan", "Ringkasan", "Tanya"];
+  const brand = screen.getByRole("link", { name: /kembali ke beranda/i });
+  brand.focus();
+
+  const visited: string[] = [];
+  for (let i = 0; i < names.length; i++) {
+    await userEvent.tab();
+    visited.push((document.activeElement as HTMLElement).textContent?.trim() ?? "");
+  }
+
+  expect(visited).toEqual(names);
+});

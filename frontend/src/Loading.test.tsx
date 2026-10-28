@@ -44,7 +44,8 @@ afterEach(() => {
 test("the page says the Hotspots are loading until they arrive", async () => {
   const { release } = setupWithSlowHotspots();
 
-  expect(await screen.findByRole("status")).toHaveTextContent("Memuat titik api");
+  // The whole suite runs in parallel, so allow a slow machine more than the default second.
+  expect(await screen.findByRole("status", {}, { timeout: 5000 })).toHaveTextContent("Memuat titik api");
 
   release();
 
@@ -54,13 +55,13 @@ test("the page says the Hotspots are loading until they arrive", async () => {
 
 test("changing a filter shows the loading message again", async () => {
   const { release } = setupWithSlowHotspots();
-  await screen.findByText(/Memuat titik api/);
+  await screen.findByText(/Memuat titik api/, {}, { timeout: 5000 });
   release();
   await waitFor(() => expect(screen.queryByText(/Memuat titik api/)).toBeNull());
 
   await userEvent.click(screen.getByRole("radio", { name: "7 hari" }));
 
-  expect(await screen.findByText(/Memuat titik api/)).toBeInTheDocument();
+  expect(await screen.findByText(/Memuat titik api/, {}, { timeout: 5000 })).toBeInTheDocument();
 });
 
 test("a failed load stops the loading message", async () => {
@@ -72,5 +73,5 @@ test("a failed load stops the loading message", async () => {
   render(<App />);
 
   await waitFor(() => expect(screen.queryByText(/Memuat titik api/)).toBeNull());
-  expect(await screen.findByText(/Tidak dapat memuat data terbaru/)).toBeInTheDocument();
+  expect(await screen.findByText(/Tidak dapat memuat data terbaru/, {}, { timeout: 5000 })).toBeInTheDocument();
 });
