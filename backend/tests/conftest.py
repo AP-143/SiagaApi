@@ -12,6 +12,12 @@ NOW = datetime(2026, 10, 16, 8, 0, tzinfo=timezone.utc)
 TEST_DB_NAME = "siagaapi_test"
 
 
+@pytest.fixture(autouse=True)
+def _no_model_unless_a_test_asks(monkeypatch):
+    """Tests never reach a real model, even when the developer's environment has one configured."""
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+
+
 @pytest.fixture(scope="session")
 def _test_database():
     """Create the throwaway PostGIS database once per session."""

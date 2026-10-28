@@ -157,6 +157,28 @@ def unsupported_window_reply() -> dict:
     }
 
 
+def needs_full_question_reply() -> dict:
+    return {
+        "kind": "unsupported",
+        "answer": (
+            "Maaf, saya belum bisa menyambungkan pertanyaan ini dengan yang sebelumnya. "
+            "Tulis pertanyaan lengkapnya, misalnya: Berapa titik api di Kalimantan Tengah dalam 7 hari?"
+        ),
+        "data": {"suggestions": SUGGESTIONS},
+    }
+
+
+def greeting_reply() -> dict:
+    return {
+        "kind": "greeting",
+        "answer": (
+            "Halo! Saya bisa membantu soal jumlah titik api per wilayah, peringkat kabupaten/kota, "
+            "kapan data diperbarui, dan arti beberapa istilah. Coba salah satu pertanyaan di bawah."
+        ),
+        "data": {"suggestions": SUGGESTIONS},
+    }
+
+
 def unsupported_reply() -> dict:
     return {
         "kind": "unsupported",
@@ -193,3 +215,17 @@ def knowledge_reply(passages: list[Passage]) -> dict:
             "related": [p.heading for p in others],
         },
     }
+
+
+def grounded_reply(text: str, best: Passage, passages: list[Passage]) -> dict:
+    """An explanation the model wrote from the passages, with the passage it rests on quoted under it.
+
+    The source line and the quotation are the document's own; the text above them is the only part
+    the model wrote.
+    """
+    reply = knowledge_reply([best, *(p for p in passages if p is not best)])
+    source_line = reply["answer"].rsplit("\n\n", 1)[1]
+    reply["answer"] = f"{text}\n\n{source_line}"
+    reply["data"]["model_written"] = True
+    reply["data"]["quote"] = best.body
+    return reply
