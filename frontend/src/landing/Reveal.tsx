@@ -12,6 +12,8 @@ type Props = {
   from: Record<string, number>;
   /** When it arrives: as soon as the page loads, or once it is scrolled to. */
   on?: "load" | "view";
+  /** Arrives when true, whatever `on` says; for content timed by the section around it. */
+  playing?: boolean;
   /** Seconds to wait before arriving. */
   delay?: number;
   duration?: number;
@@ -24,6 +26,7 @@ export default function Reveal({
   children,
   from,
   on = "load",
+  playing,
   delay = 0,
   duration = 0.9,
 }: Props) {
@@ -40,7 +43,7 @@ export default function Reveal({
       ref={ref as never}
       className={className}
       initial={from}
-      animate={on === "load" || scrolledTo ? arrived : from}
+      animate={(playing ?? (on === "load" || scrolledTo)) ? arrived : from}
       transition={{ duration, delay, ease: [0.2, 0.7, 0.2, 1] }}
     >
       {children}

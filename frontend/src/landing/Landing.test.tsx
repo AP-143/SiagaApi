@@ -29,7 +29,9 @@ test("the Landing offers a way to the map", () => {
   window.history.replaceState({}, "", "/");
   render(<Root />);
 
-  expect(screen.getByRole("link", { name: /buka peta/i })).toHaveAttribute("href", "/peta");
+  const links = screen.getAllByRole("link", { name: /buka peta/i });
+  expect(links.length).toBeGreaterThan(0);
+  for (const link of links) expect(link).toHaveAttribute("href", "/peta");
 });
 
 test("a dark theme chosen on the map does not darken the Landing", () => {
@@ -43,4 +45,13 @@ test("a dark theme chosen on the map does not darken the Landing", () => {
     "light",
   );
   expect(screen.queryByRole("button", { name: /tema/i })).not.toBeInTheDocument();
+});
+
+test("nowhere does the Landing call a Hotspot a confirmed fire", () => {
+  window.history.replaceState({}, "", "/");
+  const { container } = render(<Root />);
+
+  const text = container.textContent ?? "";
+  expect(text).toMatch(/bukan bukti/i);
+  expect(text).not.toMatch(/(dikonfirmasi|terkonfirmasi|pasti (ada )?(api|kebakaran))/i);
 });
