@@ -77,6 +77,13 @@ CREATE TABLE IF NOT EXISTS knowledge_chunks (
     ) STORED
 );
 CREATE INDEX IF NOT EXISTS knowledge_chunks_tsv_idx ON knowledge_chunks USING gin (tsv);
+-- The meaning of the heading as a unit-length vector (app/embeddings.py), for finding a passage by a
+-- question worded with other words. A plain array is enough: the knowledge base is a few dozen
+-- passages, so the comparison is done in the application and needs no vector extension. NULL means
+-- the embedding model was not available when the passage was loaded.
+ALTER TABLE knowledge_chunks ADD COLUMN IF NOT EXISTS heading_embedding real[];
+-- A quote-only document is shown word for word and never given to a language model to reword.
+ALTER TABLE knowledge_chunks ADD COLUMN IF NOT EXISTS verbatim boolean NOT NULL DEFAULT false;
 """
 
 

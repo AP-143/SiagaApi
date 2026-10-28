@@ -3,6 +3,7 @@ title: Panduan kesehatan saat kabut asap dari Kemenkes
 source: Kepmenkes HK.01.07/MENKES/2321/2020, Pedoman Pencegahan dan Pengendalian ISPA di Wilayah Karhutla (ditetapkan 28 September 2020)
 url: https://pasal.id/peraturan/permen/kepmenkes-hk-01-07-menkes-2321
 reviewed: 2026-10-17
+verbatim: true
 ---
 
 ## Apa yang sebaiknya saya lakukan di rumah saat ada kabut asap?
