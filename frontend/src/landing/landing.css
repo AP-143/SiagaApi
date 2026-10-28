@@ -9,9 +9,6 @@
   --ink-body: rgba(67, 40, 42, 0.72);
   --rust: #a86438;
   --hairline: rgba(67, 40, 42, 0.16);
-
-  /* Optical size is pinned (see .landing-display) so the hairlines stay sturdy at every size. */
-  --font-landing-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
 }
 
 body:has(.landing) {
@@ -29,7 +26,7 @@ body:has(.landing) {
 
 /* All display text is uppercase Bodoni at weight 500. */
 .landing-display {
-  font-family: var(--font-landing-display);
+  font-family: var(--font-wordmark);
   font-weight: 500;
   font-optical-sizing: none;
   font-variation-settings: "opsz" 11;
@@ -105,12 +102,18 @@ body:has(.landing) {
   will-change: filter, opacity;
 }
 
-.hero-art,
 .image-slot {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.hero-veil {
+  position: absolute;
+  inset: 0 0 45% 0;
+  background: linear-gradient(to bottom, rgba(236, 227, 209, 0.62), rgba(236, 227, 209, 0));
+  pointer-events: none;
 }
 
 .hero-title {
@@ -241,11 +244,6 @@ body:has(.landing) {
 }
 
 @media (max-width: 760px) {
-  /* Only the middle of the stage shows on a phone; sink the canopy so the dawn still shows. */
-  .hero-foreground {
-    translate: 0 14%;
-  }
-
   .hero-title {
     top: 17%;
   }

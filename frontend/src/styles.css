@@ -9,6 +9,8 @@
      the map's big titles); it is too thin to read at panel sizes on a phone in the field. */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: var(--font-sans);
+  /* The wordmark and the Landing's big headings. Optical size is pinned wherever it is used. */
+  --font-wordmark: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
 
   --panel: #f7f8f9;
   --card: rgba(247, 248, 249, 0.92);
@@ -43,8 +45,6 @@
 
   --focus: #2563eb;
   --map-bg: #e5e7eb;
-  --logo-tile: #0f172a;
-  --logo-edge: transparent;
 
   --radius-card: 10px;
   --radius-control: 6px;
@@ -85,8 +85,6 @@
 
   --focus: #93c5fd;
   --map-bg: #0b1220;
-  --logo-tile: #0f172a;
-  --logo-edge: rgba(255, 255, 255, 0.28); /* the dark tile would otherwise melt into a dark card */
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -221,32 +219,11 @@ body {
 
 .brand-mark {
   display: grid;
+  color: var(--text);
   flex: none;
   line-height: 0;
 }
 
-.logo-tile {
-  fill: var(--logo-tile);
-  stroke: var(--logo-edge);
-  stroke-width: 1;
-}
-
-.logo-hot {
-  fill: #fb923c;
-}
-
-.logo-spread {
-  fill: #fb923c;
-  fill-opacity: 0.5;
-}
-
-.logo-core {
-  fill: #fed7aa;
-}
-
-.logo-peat {
-  fill: #c084fc;
-}
 
 .brand-text {
   flex: 1;
@@ -255,11 +232,13 @@ body {
 
 .brand h1 {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 21px;
-  font-weight: 700;
+  font-family: var(--font-wordmark);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
+  font-size: 24px;
+  font-weight: 500;
   letter-spacing: 0.01em;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .brand p {

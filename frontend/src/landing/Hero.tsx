@@ -2,7 +2,6 @@ import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
 import { useEffect, useState } from "react";
 
 import LogoMark from "../LogoMark";
-import { HeroForeground, HeroSky } from "./HeroArt";
 import ImageSlot from "./ImageSlot";
 import { LANDING_IMAGES } from "./images";
 import Reveal from "./Reveal";
@@ -65,11 +64,11 @@ export default function Hero() {
   const drift = useTransform(scrollY, (y) => (reduced ? 0 : y * 0.32));
   const meltHeight = useTransform(melt, (p) => `${34 + 66 * p}%`);
   const pillOpacity = useTransform(melt, (p) => 1 - p);
-  // Blur is costly on a phone, so there the layers only fade.
+  // Blur is costly on a phone, so there the photograph only fades.
   const blur = useTransform(melt, (p) => (reduced || phone ? "none" : `blur(${p * 6}px)`));
   const fade = useTransform(melt, (p) => (phone && !reduced ? 1 - 0.6 * p : 1));
 
-  // The drawing settles from slightly enlarged, like a photograph coming into focus.
+  // The photograph settles from slightly enlarged, like coming into focus.
   const settle = reduced
     ? {}
     : { initial: { scale: 1.06 }, animate: { scale: 1 }, transition: { duration: 2.2, ease: [0.2, 0.7, 0.2, 1] as const } };
@@ -79,7 +78,9 @@ export default function Hero() {
       <div className="hero-frame">
         <motion.div className="hero-stage" style={{ y: drift }}>
           <motion.div className="hero-layer" style={{ filter: blur, opacity: fade }} {...settle}>
-            <ImageSlot src={LANDING_IMAGES.heroSky} fallback={<HeroSky />} />
+            <ImageSlot src={LANDING_IMAGES.heroSky} fallback={null} />
+            {/* A soft paper veil keeps the title readable over the clouds. */}
+            <div className="hero-veil" aria-hidden="true" />
           </motion.div>
 
           <div className="hero-title">
@@ -98,10 +99,6 @@ export default function Hero() {
               blur={10}
             />
           </div>
-
-          <motion.div className="hero-layer hero-foreground" style={{ filter: blur, opacity: fade }} {...settle}>
-            <ImageSlot src={LANDING_IMAGES.heroForeground} fallback={<HeroForeground />} />
-          </motion.div>
         </motion.div>
       </div>
 

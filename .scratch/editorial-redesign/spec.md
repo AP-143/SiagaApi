@@ -46,7 +46,8 @@ Add a **Landing**: a light-only, scrolling editorial page at `/` with three full
   - Quick facts: title "FAKTA / SINGKAT / TENTANG / TITIK API", a short paragraph that a Hotspot is a signal of possible fire and not proof, and a table (source, area, update interval, Confidence).
   - No live numbers anywhere on the Landing (ADR 0001).
 - **Landing navigation**: wordmark on the left, "SiagaApi" over "PEMANTAU TITIK API KALIMANTAN" in the centre, "BUKA PETA →" on the right. No menu, no search.
-- **Imagery**: self-made layered SVG illustration. The hero is a smoky dawn sky with a foreground ridge or tree-line silhouette that overlaps the lower part of the title, like the elephant in the reference. The round pills and the tall portrait are SVG illustrations. Every image slot is a small component that can be pointed at a WebP in `frontend/public/landing/` later without code changes. No CDN hotlinks, no photos in this feature.
+- **Imagery** (changed after the grilling, at the owner's request): real photographs under `frontend/public/landing/`, all from Wikimedia Commons with licences checked and credited under the Landing (`credits.ts`): the hero is a dawn over a peat swamp in Borneo (CC BY 4.0); the two round pills are a NASA MODIS view of Borneo's smoke (public domain) and a night forest fire in Sukadana, Ketapang, West Kalimantan (CC0); the tall portrait is peat swamp forest in Kalimantan (CC BY 2.0). Every slot is an `ImageSlot` configured in `images.ts`, so a photo can be swapped without touching a section. No CDN hotlinks. The foreground silhouette that was meant to overlap the title was tried in SVG and dropped, because a drawn shape over a real photograph looked pasted on; a real cut-out of a photographed subject can bring it back later.
+- **Logo** (also changed at the owner's request): a double ring around a single line-drawn flame, in the current text colour, with the wordmark "SiagaApi" in Bodoni Moda. It replaces the pixel-flame logo in the favicon, the Landing nav and the map header.
 - **Type and colour**:
   - Fonts: Bodoni Moda (variable, weight 500, optical size pinned to 11) for display; Inter for body and labels. Barlow is removed everywhere.
   - Landing palette from the reference: paper `#ECE3D1`, darker paper `#E6DCC8`, ink `#43282A`, body text ink at 72%, rust `#A86438`, hairlines ink at 16%, plus the fixed multiply grain layer at 38%.
@@ -71,7 +72,7 @@ Add a **Landing**: a light-only, scrolling editorial page at `/` with three full
 
 ## Out of Scope
 
-- Photography, background-removed cut-outs and any image hosted outside the repo.
+- Background-removed cut-outs, your own photography, and any image hosted outside the repo.
 - Live statistics on the Landing.
 - Any new page beyond the Landing and the map, a menu, a search, and a multi-page router.
 - A new layout for the map panels.
@@ -81,6 +82,7 @@ Add a **Landing**: a light-only, scrolling editorial page at `/` with three full
 
 ## Further Notes
 
+- Photographs are credited in the Landing footer, as their Creative Commons licences require.
 - The reference prompt describes a fictional safari brand; none of its names, copy or elephant media are used. The look and the motion choreography are what is borrowed.
 - Bodoni Moda is loaded from Google Fonts like Barlow was; self-hosting the fonts is part of the hosting work.
 - The body has `height: 100%` and the map fills the viewport. The Landing scrolls normally, so the global rules must not leak between the two views (ticket 01).
