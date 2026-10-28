@@ -35,7 +35,7 @@ test("the folded credits still hold every credit a licence asks for", () => {
   render(<Credits />);
 
   const text = screen.getByText(/NASA FIRMS/);
-  for (const credit of ["OCHA", "BPS", "BBSDLP", "NASA EOSDIS GIBS"]) {
+  for (const credit of ["OCHA", "BPS", "BBSDLP", "NASA EOSDIS GIBS", "OpenStreetMap", "MapLibre"]) {
     expect(text).toHaveTextContent(credit);
   }
 });
@@ -56,4 +56,13 @@ test("the button carries an icon, which is only decoration", () => {
   const icon = container.querySelector("summary svg");
   expect(icon).not.toBeNull();
   expect(icon).toHaveAttribute("aria-hidden", "true");
+});
+
+test("the button is only an icon on screen, but keeps its name as a tooltip", () => {
+  screenWidth(true);
+  render(<Credits />);
+
+  const summary = screen.getByText("Sumber data").closest("summary")!;
+  expect(summary).toHaveAttribute("title", "Sumber data");
+  expect(summary.querySelector("svg")).not.toBeNull();
 });

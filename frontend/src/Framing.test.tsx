@@ -47,3 +47,10 @@ test("a button brings the map back to Kalimantan after it has been moved away", 
   expect(again.bounds).toEqual(KALIMANTAN_BOUNDS);
   expect(again.options.animate).not.toBe(false);
 });
+
+test("the map's own attribution button is off, so the data-sources chip is the only info button", async () => {
+  setup();
+  await waitFor(() => expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1));
+
+  expect(createdMaps[0].options.attributionControl).toBe(false);
+});

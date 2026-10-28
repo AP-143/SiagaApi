@@ -1158,17 +1158,6 @@ body {
   filter: invert(1);
 }
 
-.app .maplibregl-ctrl-attrib {
-  font-size: 11px;
-  color: var(--text-muted);
-  background: var(--card) !important;
-  border-radius: 8px 0 0 0;
-}
-
-.app .maplibregl-ctrl-attrib a {
-  color: var(--text-muted);
-}
-
 /* ---- Phones: the filters stay a small card on top and the rest becomes a bottom sheet ------- */
 
 @media (max-width: 640px) {
@@ -1545,25 +1534,37 @@ label {
 
 .credits {
   position: fixed;
-  right: 52px;
+  right: 8px;
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   z-index: 2;
   width: min(86vw, 320px);
   font-size: 10.5px;
 }
 
+/* Folded: a round button with just the info icon. Open: a small card with the name as its heading. */
 .credits-folded {
-  width: auto;
-  max-width: min(86vw, 320px);
+  width: 44px;
+  height: 44px;
   padding: 0;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.credits-folded[open] {
+  width: auto;
+  height: auto;
+  max-width: min(86vw, 320px);
+  border-radius: 10px;
 }
 
 .credits-folded summary {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 0 12px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.16em;
@@ -1573,8 +1574,30 @@ label {
   list-style: none;
 }
 
+.credits-folded[open] summary {
+  justify-content: flex-start;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+}
+
 .credits-folded summary::-webkit-details-marker {
   display: none;
+}
+
+.credits-folded summary svg {
+  width: 20px;
+  height: 20px;
+}
+
+.credits-folded:not([open]) .credits-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .credits-folded p {
@@ -1631,10 +1654,6 @@ label {
 
   .app .maplibregl-ctrl-top-right {
     top: calc(68px + env(safe-area-inset-top, 0px));
-  }
-
-  .app .maplibregl-ctrl-bottom-right {
-    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }
 
   /* the zoom group starts at 78px (68 + its 10px margin), is 91px tall, then a 10px gap */
