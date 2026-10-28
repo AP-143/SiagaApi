@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
@@ -922,4 +922,28 @@ test("the send button is a small icon with the name 'Kirim', and it is disabled 
   await userEvent.type(screen.getByRole("textbox", { name: "Pertanyaan" }), "halo");
 
   expect(send).toBeEnabled();
+});
+
+test("the row of suggested questions slides sideways with the mouse wheel when it is wider than the sheet", async () => {
+  setup();
+  const log = await openChat();
+  const chips = log.querySelector<HTMLElement>(".chat-chips")!;
+  Object.defineProperty(chips, "scrollWidth", { configurable: true, value: 900 });
+  Object.defineProperty(chips, "clientWidth", { configurable: true, value: 300 });
+
+  fireEvent.wheel(chips, { deltaY: 120 });
+
+  expect(chips.scrollLeft).toBe(120);
+});
+
+test("the wheel is left alone when every suggestion already fits", async () => {
+  setup();
+  const log = await openChat();
+  const chips = log.querySelector<HTMLElement>(".chat-chips")!;
+  Object.defineProperty(chips, "scrollWidth", { configurable: true, value: 300 });
+  Object.defineProperty(chips, "clientWidth", { configurable: true, value: 300 });
+
+  fireEvent.wheel(chips, { deltaY: 120 });
+
+  expect(chips.scrollLeft).toBe(0);
 });

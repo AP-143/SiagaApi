@@ -895,11 +895,11 @@ body {
   padding-bottom: 2px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
-  scrollbar-width: none;
-}
-
-.chat-chips::-webkit-scrollbar {
-  display: none;
+  /* A slim scrollbar and a fading right edge tell you there is more to slide to. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--track-off) transparent;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
 }
 
 .chip-button {
@@ -913,8 +913,9 @@ body {
   text-align: left;
   white-space: nowrap;
   scroll-snap-align: start;
-  background: var(--card-solid);
-  border: 1px solid var(--border);
+  /* Lighter than the sheet and with a visible edge (3:1), so a chip does not melt into it. */
+  background: rgba(236, 227, 209, 0.1);
+  border: 1px solid rgba(236, 227, 209, 0.42);
   border-radius: 999px;
   cursor: pointer;
   transition: border-color 150ms ease, background-color 150ms ease;
@@ -922,7 +923,7 @@ body {
 
 .chip-button:hover {
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background: rgba(236, 227, 209, 0.2);
 }
 
 .source-link {

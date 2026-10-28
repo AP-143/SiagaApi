@@ -2,6 +2,7 @@ import { m, useReducedMotion } from "motion/react";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { useChat } from "./chat";
+import ChipRow from "./ChipRow";
 import Collapsible from "./Collapsible";
 import type { Filters } from "./filters";
 import { ChatIcon, SendIcon } from "./icons";
@@ -136,7 +137,7 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
           )}
           {/* Follow-up choices belong to the conversation, right after the message they answer. */}
           {last.role === "assistant" && !busy && (
-            <div className="chat-chips">
+            <ChipRow>
               {last.choices?.map((choice) => (
                 <button
                   key={choice.label}
@@ -157,7 +158,7 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   {suggestion}
                 </button>
               ))}
-            </div>
+            </ChipRow>
           )}
         </div>
 
