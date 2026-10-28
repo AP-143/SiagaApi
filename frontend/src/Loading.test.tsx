@@ -50,7 +50,8 @@ test("the page says the Hotspots are loading until they arrive", async () => {
   release();
 
   await waitFor(() => expect(screen.queryByText(/Memuat titik api/)).toBeNull());
-  expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1);
+  // The map is filled by an effect that may run a moment after the message goes away.
+  await waitFor(() => expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1));
 });
 
 test("changing a filter shows the loading message again", async () => {

@@ -1379,6 +1379,8 @@ label {
   bottom: var(--bar-bottom);
   z-index: 3;
   display: flex;
+  /* Explicit, so every cell lays out the same way whichever older panel rule it did or did not inherit. */
+  flex-direction: column;
   align-items: stretch;
   justify-content: center;
   box-sizing: border-box;
