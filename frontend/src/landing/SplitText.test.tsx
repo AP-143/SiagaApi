@@ -53,6 +53,14 @@ test("the letters appear once the heading is scrolled to", async () => {
   await waitFor(() => expect(letters[0]).toBeVisible());
 });
 
+test("a heading that plays on load needs no scrolling to appear", async () => {
+  prefersReducedMotion(false);
+  render(<SplitText as="h1" text="Api" on="load" />);
+
+  const letters = screen.getByRole("heading").querySelectorAll('[aria-hidden="true"]');
+  await waitFor(() => expect(letters[0]).toBeVisible());
+});
+
 test("with reduced motion every letter is in place at once", () => {
   prefersReducedMotion(true);
   render(<SplitText as="h2" text="Api" />);

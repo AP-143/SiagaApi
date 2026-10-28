@@ -5,22 +5,46 @@ type Props = {
   text: string;
   as?: "h1" | "h2" | "h3" | "p" | "span";
   className?: string;
+  /** When the letters play: as soon as the page loads, or once the text is scrolled to. */
+  on?: "view" | "load";
   /** Seconds between one letter and the next, in reading order. */
   stagger?: number;
+  /** Seconds to wait before the first letter. */
+  delay?: number;
+  /** How far below its place a letter starts, in em. */
+  rise?: number;
+  /** How much a letter starts tilted, in degrees. */
+  tilt?: number;
+  /** How blurred a letter starts, in px. */
+  blur?: number;
+  /** Seconds one letter takes to settle. */
+  duration?: number;
 };
 
-const HIDDEN = { opacity: 0, y: "0.55em", rotate: 4 };
-const SHOWN = { opacity: 1, y: 0, rotate: 0 };
-
 /**
- * Text that climbs in one letter at a time when it is scrolled to. Assistive technology gets the
- * whole text from the wrapper; the single letters are hidden from it. With reduced motion the
- * letters are simply in place.
+ * Text that climbs in one letter at a time. Assistive technology gets the whole text from the
+ * wrapper; the single letters are hidden from it. With reduced motion the letters are simply in
+ * place. The defaults suit a statement scrolled into view.
  */
-export default function SplitText({ text, as = "span", className, stagger = 0.026 }: Props) {
+export default function SplitText({
+  text,
+  as = "span",
+  className,
+  on = "view",
+  stagger = 0.026,
+  delay = 0,
+  rise = 0.55,
+  tilt = 4,
+  blur = 0,
+  duration = 0.9,
+}: Props) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const inView = useInView(ref, { once: true, amount: 0.35 });
+  const scrolledTo = useInView(ref, { once: true, amount: 0.35 });
+  const playing = on === "load" || scrolledTo;
+
+  const hidden = { opacity: 0, y: `${rise}em`, rotate: tilt, filter: `blur(${blur}px)` };
+  const shown = { opacity: 1, y: 0, rotate: 0, filter: "blur(0px)" };
 
   let index = 0;
   const words = text.split(" ").map((word, w) => (
@@ -29,7 +53,7 @@ export default function SplitText({ text, as = "span", className, stagger = 0.02
       {/* A word stays whole; only the gap between words may wrap. */}
       <span className="split-word">
         {Array.from(word, (letter) => {
-          const delay = index++ * stagger;
+          const wait = delay + index++ * stagger;
           return reduced ? (
             <span key={index} aria-hidden="true" className="split-letter">
               {letter}
@@ -39,9 +63,9 @@ export default function SplitText({ text, as = "span", className, stagger = 0.02
               key={index}
               aria-hidden="true"
               className="split-letter"
-              initial={HIDDEN}
-              animate={inView ? SHOWN : HIDDEN}
-              transition={{ duration: 0.9, ease: [0.2, 0.7, 0.2, 1], delay }}
+              initial={hidden}
+              animate={playing ? shown : hidden}
+              transition={{ duration, ease: [0.2, 0.7, 0.2, 1], delay: wait }}
             >
               {letter}
             </motion.span>
