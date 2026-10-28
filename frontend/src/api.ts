@@ -68,9 +68,16 @@ export function fetchLayer(name: "provinces" | "regencies" | "peatlands"): Promi
   return getJson(`/layers/${name}`);
 }
 
+/** Whether a language model is behind the chat. Only configuration, no user data. */
+export function fetchChatStatus(): Promise<{ ai: boolean }> {
+  return getJson("/chat/status");
+}
+
 export type ChatReply = {
   kind: string;
   answer: string;
+  /** Present and true when the model was meant to help but could not, so the answer came from rules alone. */
+  simple_mode?: boolean;
   data: {
     suggestions?: string[];
     candidates?: Array<{ name: string }>;
@@ -91,13 +98,17 @@ export class ChatError extends Error {
   }
 }
 
-export async function sendChat(message: string): Promise<ChatReply> {
+/** One earlier message of the conversation, sent so a follow-up can be understood. */
+export type ChatTurn = { role: "user" | "assistant"; text: string };
+
+export async function sendChat(message: string, history: ChatTurn[] = []): Promise<ChatReply> {
   let response: Response;
   try {
     response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      // The first question has no history, and then says no more than it always did.
+      body: JSON.stringify(history.length ? { message, history } : { message }),
     });
   } catch {
     throw new ChatError(0);

@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { ChatError, type ChatReply, sendChat } from "./api";
+import { ChatError, type ChatReply, fetchChatStatus, sendChat } from "./api";
 import { type Filters, TIME_WINDOWS } from "./filters";
 
 export type Choice = { label: string; message: string };
@@ -23,7 +23,19 @@ export type ChatMessage = {
   choices?: Choice[];
   /** Web addresses of the documents a quoted answer comes from. Only plain http(s) ever gets here. */
   sourceLinks?: string[];
+  /** The model could not help with this answer, which came from rules alone. */
+  simpleMode?: boolean;
+  /** The question could not be answered at all (an error message, not an answer). */
+  failed?: boolean;
+  /** The text above was written by the model from the document passage quoted in `quote`. */
+  modelWritten?: boolean;
+  /** The passage, word for word, that a model-written answer rests on. */
+  quote?: string;
 };
+
+// How many earlier messages go with a question; the server accepts no more than this.
+const HISTORY_TURNS = 6;
+const MAX_TURN_LENGTH = 500;
 
 export const GREETING =
   "Halo! Tanyakan jumlah titik api per wilayah, peringkat kabupaten/kota, kapan data diperbarui, " +
@@ -129,6 +141,15 @@ export function splitSourceNote(reply: ChatReply): { text: string; sourceNote?: 
   return { text: reply.answer.slice(0, at).trim(), sourceNote: reply.answer.slice(at).trim() };
 }
 
+/** A model-written answer is labelled, and the passage it rests on is shown under it. Both or neither. */
+function modelWrittenParts(reply: ChatReply): { modelWritten?: boolean; quote?: string } {
+  const { model_written, quote } = reply.data;
+  if (model_written === true && typeof quote === "string" && quote !== "") {
+    return { modelWritten: true, quote };
+  }
+  return {};
+}
+
 function followUps(reply: ChatReply, asked: string) {
   const choices = (reply.data.candidates ?? []).map((candidate) => ({
     label: candidate.name,
@@ -147,6 +168,18 @@ export function useChat() {
     { id: 0, role: "assistant", text: GREETING, suggestions: STARTER_QUESTIONS },
   ]);
   const [busy, setBusy] = useState(false);
+  // Whether questions go to an AI service. Unknown counts as no, so nothing is claimed that is not known.
+  const [aiOn, setAiOn] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    fetchChatStatus()
+      .then((status) => current && setAiOn(status.ai === true))
+      .catch(() => {});
+    return () => {
+      current = false;
+    };
+  }, []);
 
   function add(message: Omit<ChatMessage, "id">) {
     setMessages((current) => [...current, { ...message, id: nextId.current++ }]);
@@ -155,23 +188,30 @@ export function useChat() {
   /** `shown` is what the person sees as their question; `asked` is what is sent to the server. */
   async function ask(shown: string, asked: string = shown) {
     if (busy) return;
+    // What was said so far, without the greeting (it is not part of the conversation) and without errors.
+    const history = messages
+      .filter((message) => message.id !== 0 && !message.failed)
+      .slice(-HISTORY_TURNS)
+      .map(({ role, text }) => ({ role, text: text.slice(0, MAX_TURN_LENGTH) }));
     setBusy(true);
     add({ role: "user", text: shown });
     try {
-      const reply = await sendChat(asked);
+      const reply = await sendChat(asked, history);
       add({
         role: "assistant",
         ...(reply.kind === "ranking" ? splitRanking(reply) : splitSourceNote(reply)),
         view: filtersFromReply(reply) ?? undefined,
         sourceLinks: linkableSources(reply),
+        simpleMode: reply.simple_mode === true,
+        ...modelWrittenParts(reply),
         ...followUps(reply, asked),
       });
     } catch (error) {
-      add({ role: "assistant", text: failureText(error) });
+      add({ role: "assistant", text: failureText(error), failed: true });
     } finally {
       setBusy(false);
     }
   }
 
-  return { messages, busy, ask };
+  return { messages, busy, aiOn, ask };
 }

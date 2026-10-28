@@ -16,7 +16,7 @@ type Props = {
 
 /** Ask questions about the Hotspots in plain words. Answers are computed by the server from the same data as the map. */
 export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
-  const { messages, busy, ask } = useChat();
+  const { messages, busy, aiOn, ask } = useChat();
   const [draft, setDraft] = useState("");
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +77,14 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   {message.tail}
                 </p>
               )}
+              {message.modelWritten && (
+                <>
+                  <p className="ai-label">Dijawab AI dari sumber di bawah</p>
+                  <blockquote className="chat-quote" style={{ whiteSpace: "pre-line" }}>
+                    {message.quote}
+                  </blockquote>
+                </>
+              )}
               {(message.sourceNote || message.sourceLinks?.length) && (
                 <p className="source-note">
                   {message.sourceNote}
@@ -85,6 +93,11 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                       Buka sumber
                     </a>
                   ))}
+                </p>
+              )}
+              {message.simpleMode && (
+                <p className="simple-mode-note">
+                  Mode sederhana: asisten AI sedang tidak tersedia, jadi jawaban ini dari aturan baku.
                 </p>
               )}
               {message.view && (
@@ -151,6 +164,11 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
         <p className="chat-note">
           Titik api adalah deteksi satelit, belum tentu kebakaran.
         </p>
+        {aiOn && (
+          <p className="chat-privacy">
+            Pertanyaan diproses layanan AI pihak ketiga. Jangan menulis data pribadi.
+          </p>
+        )}
       </Collapsible>
     </section>
   );
