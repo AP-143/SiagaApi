@@ -51,3 +51,7 @@ _Avoid_: Locked document, protected document
 **Simple mode**:
 The chat working without the language model, because it is turned off, down, slow, rate limited or over its budget. Answers come from the rules and from verbatim quotations, and the panel says so.
 _Avoid_: Offline mode, degraded mode
+
+**Landing**:
+The scrolling editorial page at `/` that explains what a Hotspot is and where the data comes from, and leads to the map. It is always light and shows no live numbers. The map itself lives at `/peta`.
+_Avoid_: Home page, splash page, marketing page

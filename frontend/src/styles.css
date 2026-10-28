@@ -5,10 +5,10 @@
 :root {
   color-scheme: light;
 
-  /* Barlow reads like signage and instrument panels; its semi-condensed cut keeps numbers and
-     titles compact in a narrow column. Body text is the regular width. */
-  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
+  /* Inter for everything small. Bodoni Moda is only for large display text (see landing.css and
+     the map's big titles); it is too thin to read at panel sizes on a phone in the field. */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-sans);
 
   --panel: #f7f8f9;
   --card: rgba(247, 248, 249, 0.92);
@@ -1334,4 +1334,10 @@ body {
   line-height: 1.5;
   color: var(--text-muted);
   border-left: 2px solid var(--border);
+}
+
+.map-loading {
+  margin: 0;
+  padding: 24px;
+  color: var(--text-muted);
 }
