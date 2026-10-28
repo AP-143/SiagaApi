@@ -9,9 +9,9 @@ type OpenPanels = Record<PanelName, boolean>;
 const ALL_CLOSED: OpenPanels = { filter: false, layers: false, summary: false, chat: false };
 
 /**
- * Which panels are open. A medium screen has room for the data panels side by side. On a phone they
- * would cover each other and the map, and on a wide screen they are popovers under the top bar, so
- * there panels start closed and opening one closes the others. The chat is always closed to begin
+ * Which panels are open. In the bar layout (every real browser) panels are sheets above the bottom
+ * bar: they start closed and opening one closes the others. Without it (a test environment with no
+ * matchMedia) the data panels sit side by side and start open. The chat is always closed to begin
  * with: it is something you reach for, not something to look at.
  */
 export function usePanels() {
@@ -29,7 +29,7 @@ export function usePanels() {
 
   /** After something is put on the map, a phone needs its panels out of the way to show it. */
   function closeOnPhone() {
-    if (isPhoneViewport()) setOpen(ALL_CLOSED);
+    if (isPhoneViewport() || isBarViewport()) setOpen(ALL_CLOSED);
   }
 
   const closeAll = useCallback(() => setOpen(ALL_CLOSED), []);

@@ -11,10 +11,10 @@ vi.mock("maplibre-gl", async () => (await import("./test/fakeMapLibre")).fakeMap
 
 const KALBAR = { code: "ID61", name: "Kalimantan Barat" };
 
-/** A wide screen: the slim top bar applies, and nothing else in the page matches a media query. */
-function wideScreen() {
+/** A browser: the bar layout applies at every width, and nothing else matches a media query. */
+function browserScreen() {
   vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: query.includes("min-width: 1000px"),
+    matches: query.includes("min-width: 1px"),
     media: query,
     addEventListener() {},
     removeEventListener() {},
@@ -34,7 +34,7 @@ function setup() {
 beforeEach(() => {
   createdMaps.length = 0;
   openPopups.length = 0;
-  wideScreen();
+  browserScreen();
 });
 
 afterEach(() => {
@@ -42,7 +42,7 @@ afterEach(() => {
   window.history.replaceState({}, "", "/");
 });
 
-test("on a wide screen every panel starts closed so the map is all there is", async () => {
+test("every panel starts closed so the map is all there is", async () => {
   setup();
   await waitFor(() => expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1));
 
@@ -52,7 +52,7 @@ test("on a wide screen every panel starts closed so the map is all there is", as
   expect(screen.queryByLabelText("Provinsi")).toBeNull();
 });
 
-test("on a wide screen opening a panel closes the one that was open", async () => {
+test("opening a panel closes the one that was open", async () => {
   setup();
   await userEvent.click(screen.getByRole("button", { name: "Filter" }));
   expect(await screen.findByLabelText("Provinsi")).toBeInTheDocument();
@@ -98,7 +98,7 @@ test("each panel button says which content it controls", async () => {
   expect(body.closest(`[id="${filter.getAttribute("aria-controls")}"]`)).not.toBeNull();
 });
 
-test("on a wide screen the legend starts as just its title", async () => {
+test("the legend starts as just its title", async () => {
   setup();
   await waitFor(() => expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1));
 

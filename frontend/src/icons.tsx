@@ -29,6 +29,14 @@ export const FrameIcon = () => (
   </Icon>
 );
 
+/** A circled "i": information. */
+export const InfoIcon = () => (
+  <Icon size={16}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5M12 8h.01" />
+  </Icon>
+);
+
 export const ChevronIcon = () => (
   <Icon size={16}>
     <path d="m6 9 6 6 6-6" />

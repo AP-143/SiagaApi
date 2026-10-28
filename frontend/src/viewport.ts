@@ -9,9 +9,10 @@ export function isNarrowViewport(): boolean {
 }
 
 /**
- * Wide screens get the slim top bar: panels start closed and open one at a time as popovers under
- * their button. Keep this in step with the min-width in the "slim top bar" block of styles.css.
+ * Every real browser gets the bar layout: a name bar on top, a bar of four icons at the bottom, and
+ * panels that open one at a time as sheets above it, all closed to begin with. The query is true at
+ * any width; a test environment with no matchMedia keeps the stacked layout the older tests describe.
  */
 export function isBarViewport(): boolean {
-  return window.matchMedia?.("(min-width: 1000px)").matches ?? false;
+  return window.matchMedia?.("(min-width: 1px)").matches ?? false;
 }

@@ -1,17 +1,21 @@
-import { isPhoneViewport } from "./viewport";
+import { InfoIcon } from "./icons";
+import { isBarViewport } from "./viewport";
 
 const CREDITS =
   "Titik api: NASA FIRMS (VIIRS). Batas wilayah: OCHA / BPS, COD-AB Indonesia (CC BY-IGO). Lahan gambut: Kementerian Pertanian (BBSDLP) melalui BIG Satu Peta. Citra satelit: NASA EOSDIS GIBS.";
 
 /**
- * Credits that the data licenses ask for. A phone has no room for the whole text above its bottom
- * bar, so there it is folded behind a small "Sumber data" button; the text stays in the page.
+ * Credits that the data licenses ask for. With the bar layout there is no room for the whole text
+ * above the bottom bar, so it is folded behind a small "Sumber data" button; the text stays in the page.
  */
 export default function Credits() {
-  if (isPhoneViewport()) {
+  if (isBarViewport()) {
     return (
       <details className="credits credits-folded">
-        <summary>Sumber data</summary>
+        <summary>
+          <InfoIcon />
+          Sumber data
+        </summary>
         <p>{CREDITS}</p>
       </details>
     );
