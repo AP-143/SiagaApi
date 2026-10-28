@@ -20,6 +20,13 @@ services:
     image: siagaapi-backend
     environment:
       DATABASE_URL: postgresql://siagaapi:siagaapi@db:5432/siagaapi
+      # Optional language model for the chat; empty means the chat runs on rules alone.
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-20}
+      LLM_CALLS_PER_MINUTE: ${LLM_CALLS_PER_MINUTE:-20}
+      LLM_CALLS_PER_DAY: ${LLM_CALLS_PER_DAY:-500}
     ports:
       - "8000:8000"
     volumes:
@@ -41,6 +48,14 @@ services:
       db:
         condition: service_healthy
 
+  # A small local language model for the chat. Off unless asked for: `docker compose --profile ai up`.
+  # It downloads no model by itself; see "Chat language model" in the README.
+  ollama:
+    image: ollama/ollama
+    profiles: ["ai"]
+    volumes:
+      - ollama-models:/root/.ollama
+
   web:
     image: node:22-alpine
     working_dir: /app
@@ -57,4 +72,5 @@ services:
 
 volumes:
   db-data:
+  ollama-models:
   web-node-modules:

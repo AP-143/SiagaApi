@@ -46,6 +46,31 @@ Frontend tests run against a mocked API (Seam 2: user-visible UI behavior):
 cd frontend && npm install && npm test
 ```
 
+## Chat language model (optional)
+
+The chat works on rules alone. A language model, when configured, helps it understand questions the rules cannot read; numbers and places still come from the database (`docs/adr/0003-ai-layer-is-optional-grounded-and-swappable.md`). With no model, or when the model fails, the chat falls back to the rules and says it is in simple mode.
+
+The API talks to any server that speaks the OpenAI chat format, chosen in `.env` (see `.env.example`): `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` and `LLM_TIMEOUT_SECONDS`. Leave `LLM_BASE_URL` empty to keep the model off.
+
+**A local model** (free, nothing leaves your machine): start the optional Ollama service, pull a small model into it, then point the API at it.
+
+```
+docker compose --profile ai up -d ollama
+docker compose exec ollama ollama pull <model>
+```
+
+The model measured best so far is `qwen2.5:3b` (see `docs/chatbot.md`): `ollama pull qwen2.5:3b`. Put `LLM_BASE_URL=http://ollama:11434/v1` and `LLM_MODEL=<model>` in `.env`, then restart the API (`docker compose up -d api`). A plain `docker compose up` never starts Ollama or downloads a model. A small model on a CPU can be slow, so raise `LLM_TIMEOUT_SECONDS` if answers fall back to simple mode.
+
+**Choosing a model.** The automatic tests use a fake model and say nothing about how well a real one reads Indonesian. To measure that, run the evaluation (not part of CI) against the model you configured, or name another one with `--model`:
+
+```
+docker compose run --rm api python -m app.cli evaluate-model --model <model> [--verbose]
+```
+
+It asks about a hundred questions (explanations, synonyms, questions the documents do not cover, free-form counts, follow-ups, greetings and hostile ones) and prints how many the chat got right per group, how many calls failed, and how long it took. Results and the chosen default are in `docs/chatbot.md`.
+
+**A hosted API**: set the same three variables to its address, model and key (for example Groq, OpenRouter or Cloudflare Workers AI). Free tiers have limits for the whole application, and some use prompts for training, so read the provider's terms first and never put a key in the repository.
+
 ## Chat knowledge
 
 The chat explains terms (what a Hotspot is, why peat burns) by quoting the reviewed documents in `backend/knowledge/`. Check and reload them with `docker compose run --rm api python -m app.cli load-knowledge`; see `docs/chatbot.md` for how to add one.
