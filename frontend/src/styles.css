@@ -1349,3 +1349,134 @@ summary,
 label {
   touch-action: manipulation;
 }
+
+/* ---------------------------------------------------------------------------------------------
+   Slim top bar (wide screens). The left sheet and the right column become two thin bars; each
+   panel's body opens as a popover under its own button, one at a time (see panels.ts). Phones and
+   medium screens keep the stacked panels above.
+   --------------------------------------------------------------------------------------------- */
+@media (min-width: 1000px) {
+  .overlay-top,
+  .overlay-bottom {
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    height: 52px;
+    padding: 0 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow);
+  }
+
+  .overlay-top.sheet {
+    overflow: visible;
+  }
+
+  /* The right bar holds only the two toggles; the sheet inside it loses its own frame. */
+  .overlay-bottom > .sheet {
+    flex-direction: row;
+    align-items: center;
+    overflow: visible;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .overlay-top.sheet > .brand {
+    position: static;
+    background: none;
+  }
+
+  .brand {
+    gap: 10px;
+    padding: 0 4px 0 6px;
+  }
+
+  .brand p {
+    display: none;
+  }
+
+  .sheet > .card,
+  .sheet > .card + .card {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    overflow: visible; /* the popover reaches outside the bar */
+    align-items: center;
+    height: 100%;
+    min-height: 0;
+    border-top: 0;
+  }
+
+  .sheet > .card .panel-toggle {
+    width: auto;
+    min-height: 44px;
+    padding: 0 12px;
+    gap: 8px;
+    border-radius: var(--radius-control);
+  }
+
+  .sheet > .card .panel-toggle:hover,
+  .sheet > .card .panel-toggle[aria-expanded="true"] {
+    background: var(--accent-soft);
+  }
+
+  .sheet > .card .panel-toggle .chevron {
+    display: none;
+  }
+
+  /* The panel's body floats under its button. */
+  .sheet > .card .panel-body {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 5;
+    width: 320px;
+    max-height: calc(100vh - 110px);
+    padding: 12px 14px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow);
+  }
+
+  /* The right bar sits against the screen's edge, so its popovers open leftwards. */
+  .overlay-bottom .sheet > .card .panel-body {
+    left: auto;
+    right: 0;
+    width: 340px;
+  }
+
+  .chat-panel:has(.panel-body) {
+    min-height: 0;
+  }
+
+  .chat-panel .panel-body {
+    height: min(520px, calc(100vh - 110px));
+  }
+
+  .chat-log {
+    max-height: none;
+  }
+
+  /* The status stays in view just under the bar, out of the way of the map. */
+  .status-bar {
+    position: fixed;
+    top: calc(72px + env(safe-area-inset-top, 0px));
+    right: calc(58px + env(safe-area-inset-right, 0px));
+    align-items: flex-end;
+    pointer-events: auto;
+  }
+
+  .credits {
+    position: fixed;
+    right: calc(58px + env(safe-area-inset-right, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    width: 304px;
+  }
+}
