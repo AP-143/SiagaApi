@@ -1,49 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-export type Theme = "light" | "dark";
-
-const STORAGE_KEY = "siagaapi-theme";
-
-function storedTheme(): Theme | null {
-  // Storage can be missing or blocked (private windows, cleared site data), so never rely on it.
-  try {
-    const value = localStorage.getItem(STORAGE_KEY);
-    return value === "light" || value === "dark" ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function systemTheme(): Theme {
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-/** Let the colours cross-fade for a moment, so switching theme never flashes. */
-function fadeColours() {
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-  const root = document.documentElement;
-  root.classList.add("theme-fade");
-  window.setTimeout(() => root.classList.remove("theme-fade"), 400);
-}
-
-/** The page theme: a remembered choice if there is one, otherwise whatever the system uses. */
-export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => storedTheme() ?? systemTheme());
-
+/**
+ * The map is dark only: the dark basemap lets Hotspots stand out, and one look is easier to keep
+ * readable than two. (The Landing is a separate page with its own paper look.)
+ */
+export function useDarkTheme() {
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
-
-  function toggle() {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    fadeColours();
-    setTheme(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // The choice still applies for this visit.
-    }
-  }
-
-  return { theme, toggle };
+    document.documentElement.dataset.theme = "dark";
+  }, []);
 }

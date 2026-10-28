@@ -23,7 +23,7 @@ import { useDismissPopovers, usePanels } from "./panels";
 import RegencyPanel from "./RegencyPanel";
 import { formatSatelliteDate, latestSatelliteDate } from "./satellite";
 import StatusBar, { type FreshnessState } from "./StatusBar";
-import { useTheme } from "./theme";
+import { useDarkTheme } from "./theme";
 import { LAYER_INFO, type MapViewState, parseView, viewToParams } from "./view";
 
 // A page left open for hours must keep up with the 30-minute ingestion.
@@ -49,7 +49,7 @@ export default function App() {
   const [refreshTick, setRefreshTick] = useState(0);
   const panels = usePanels();
   useDismissPopovers(Object.values(panels.open).some(Boolean), panels.closeAll);
-  const { theme, toggle: toggleTheme } = useTheme();
+  useDarkTheme();
   const layers = useLayerData(view.layers);
   // Fixed for the visit, so the imagery and the date shown beside it can never disagree.
   const satelliteDate = useMemo(() => latestSatelliteDate(), []);
@@ -150,13 +150,12 @@ export default function App() {
       <div className="grain" aria-hidden="true" />
       <MapView
         hotspots={hotspots}
-        theme={theme}
         view={view}
         layerData={layers.data}
         satelliteDate={satelliteDate}
       />
       <div className="overlay overlay-top sheet">
-        <Brand theme={theme} onToggleTheme={toggleTheme} />
+        <Brand />
         <FilterPanel
           filters={filters}
           provinces={provinces}

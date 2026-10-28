@@ -1,11 +1,10 @@
 /* ---------------------------------------------------------------------------------------------
-   Design tokens. Light is the default (paper and ink); the dark values ("night ink", a deep
-   brown-plum) apply when <html data-theme="dark">. Text colors are chosen for at least 4.5:1
-   contrast on their card background. Rust belongs to the Landing; the map keeps orange and purple
-   for data only.
+   Design tokens. The map is dark only: a deep brown-plum "night ink". Text colors are chosen for at
+   least 4.5:1 contrast on their card background. Orange and purple are kept for data (a Hotspot,
+   peat) and are never used to decorate the interface.
    --------------------------------------------------------------------------------------------- */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
   /* Inter for everything small. Bodoni Moda is only for large display text (see landing.css and
      the map's big titles); it is too thin to read at panel sizes on a phone in the field. */
@@ -14,53 +13,7 @@
   /* The wordmark and the Landing's big headings. Optical size is pinned wherever it is used. */
   --font-wordmark: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
 
-  --panel: #ece3d1; /* paper */
-  --card: rgba(236, 227, 209, 0.94);
-  --card-solid: #f4eddd;
-  --text: #43282a; /* ink */
-  --text-muted: rgba(67, 40, 42, 0.72); /* ink at 72%, 4.9:1 on the paper */
-  --border: rgba(67, 40, 42, 0.16);
-  --shadow: 0 1px 2px rgba(67, 40, 42, 0.12), 0 8px 22px rgba(67, 40, 42, 0.16);
-
-  --field-bg: #f4eddd;
-  --track-off: #cdbfac;
-  --segment-bg: rgba(67, 40, 42, 0.07);
-  /* The interface itself is ink on paper. Orange and purple are kept for data (a Hotspot, peat), so
-     nothing in the chrome competes with the points on the map. */
-  --button-bg: #43282a;
-  --button-text: #f6efe1;
-
-  --accent: #43282a;
-  --accent-strong: #43282a;
-  --accent-soft: rgba(67, 40, 42, 0.09);
-  --ember: #ea580c;
-  --ember-strong: #b23a08; /* ember used for text: at least 5:1 on the paper panel */
-  --ember-soft: rgba(234, 88, 12, 0.12);
-  --peat: #a855f7;
-  --peat-strong: #7e22ce;
-  --peat-soft: rgba(168, 85, 247, 0.14);
-
-  --good: #15803d;
-  --warn-bg: #f6e3b4;
-  --warn-text: #5c2f0a;
-  --warn-border: #c98a1b;
-
-  --focus: #2563eb;
-  --map-bg: #e6dcc8; /* darker paper */
-
-  /* Small caps labels. The Landing's rust (#a86438) is only 3.3:1 on paper, too faint for 10.5px type,
-     so labels use a slightly deeper rust that reaches 5:1. */
-  --rust-text: #8c4f2c;
-  --grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.26 0 0 0 0 0.16 0 0 0 0 0.16 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-
-  --radius-card: 6px;
-  --radius-control: 4px;
-  --gap: 8px;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-
+  /* Night ink: a deep brown-plum, with paper-coloured text. */
   --panel: #261a1d;
   --card: rgba(38, 26, 29, 0.94);
   --card-solid: #302125;
@@ -72,6 +25,8 @@
   --field-bg: #1b1214;
   --track-off: #5b4a47;
   --segment-bg: rgba(236, 227, 209, 0.08);
+  /* The interface itself is paper on ink. Orange and purple are kept for data (a Hotspot, peat), so
+     nothing in the chrome competes with the points on the map. */
   --button-bg: #ece3d1;
   --button-text: #2a191c;
 
@@ -92,7 +47,17 @@
 
   --focus: #93c5fd;
   --map-bg: #1a1214;
+
+  /* Small caps labels: a warm rust, lifted for the dark ground (about 8:1). */
   --rust-text: #dba37d;
+  --grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.26 0 0 0 0 0.16 0 0 0 0 0.16 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* The same noise in paper colour, for the dark map. */
+  --grain-image-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.93 0 0 0 0 0.89 0 0 0 0 0.82 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  --radius-card: 6px;
+  --radius-control: 4px;
+  --gap: 8px;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -328,6 +293,13 @@ body {
 .layers-form {
   display: grid;
   gap: 8px;
+}
+
+/* The base-map choice is a different kind of thing from the switches above it: set it apart. */
+.layers-form .field {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
 .status-bar,
@@ -1190,7 +1162,7 @@ body {
   text-align: right;
 }
 
-.maplibregl-ctrl-group {
+.app .maplibregl-ctrl-group {
   overflow: hidden;
   background: var(--card-solid);
   border: 1px solid var(--border);
@@ -1198,27 +1170,27 @@ body {
   box-shadow: var(--shadow);
 }
 
-.maplibregl-ctrl-group button {
+.app .maplibregl-ctrl-group button {
   width: 40px;
   height: 40px;
 }
 
-.maplibregl-ctrl-group button + button {
+.app .maplibregl-ctrl-group button + button {
   border-top: 1px solid var(--border);
 }
 
-:root[data-theme="dark"] .maplibregl-ctrl-icon {
+.app .maplibregl-ctrl-icon {
   filter: invert(1);
 }
 
-.maplibregl-ctrl-attrib {
+.app .maplibregl-ctrl-attrib {
   font-size: 11px;
   color: var(--text-muted);
   background: var(--card) !important;
   border-radius: 8px 0 0 0;
 }
 
-.maplibregl-ctrl-attrib a {
+.app .maplibregl-ctrl-attrib a {
   color: var(--text-muted);
 }
 
@@ -1352,7 +1324,7 @@ body {
 
 /* MapLibre's own zoom buttons are 29px; make them thumb-sized on touch screens and phones. */
 @media (pointer: coarse), (max-width: 640px) {
-  .maplibregl-ctrl-group button {
+  .app .maplibregl-ctrl-group button {
     width: 44px;
     height: 44px;
   }
@@ -1391,24 +1363,41 @@ label {
   .overlay-bottom {
     flex-direction: row;
     align-items: center;
-    gap: 2px;
+    gap: 8px;
     width: auto;
     max-width: none;
     max-height: none;
     height: 52px;
-    padding: 0 6px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow);
-  }
-
-  /* The right side is two separate things, the summary and the chat, each with its own frame. */
-  .overlay-bottom {
     padding: 0;
     background: none;
     border: 0;
     box-shadow: none;
+  }
+
+  /* Four separate pieces: the name, and the pair Filter + Lapisan on the left; the summary and the
+     chat on the right. Each has its own frame, so nothing reads as one crowded bar. */
+  .overlay-top.sheet > .card.brand,
+  .overlay-top.sheet > .card.filter-panel,
+  .overlay-top.sheet > .card.layers-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .overlay-top.sheet > .card.brand {
+    border-radius: var(--radius-card);
+    padding: 0 12px 0 8px;
+  }
+
+  /* Filter and Lapisan sit side by side as one segmented pair. */
+  .overlay-top.sheet > .card.filter-panel {
+    border-radius: var(--radius-card) 0 0 var(--radius-card);
+  }
+
+  .overlay-top.sheet > .card.layers-panel {
+    margin-left: -9px; /* the gap of the bar, so the two touch */
+    border-left-color: transparent;
+    border-radius: 0 var(--radius-card) var(--radius-card) 0;
   }
 
   .overlay-bottom > .sheet {
@@ -1472,7 +1461,6 @@ label {
 
   .overlay-top.sheet > .brand {
     position: static;
-    background: none;
   }
 
   .brand {
@@ -1524,7 +1512,12 @@ label {
     box-shadow: var(--shadow);
   }
 
-  /* The right bar sits against the screen's edge, so its popovers open leftwards. */
+  /* The right bar sits against the screen's edge, so its popovers open leftwards, both hanging from
+     the bar's right end (the bar, not the small button, is their anchor). */
+  .overlay-bottom .sheet > .card {
+    position: static;
+  }
+
   .overlay-bottom .sheet > .card .panel-body {
     left: auto;
     right: 0;
@@ -1576,23 +1569,10 @@ label {
   inset: 0;
   z-index: 50;
   pointer-events: none;
-  opacity: 0.38;
-  background-image: var(--grain-image);
+  opacity: 0.1;
+  background-image: var(--grain-image-paper);
 }
 
-:root[data-theme="dark"] .grain {
-  opacity: 0.16;
-}
-
-/* In the light theme the basemap is washed towards cream, so the map belongs to the same paper. */
-:root:not([data-theme="dark"]) .app .map::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: rgba(236, 227, 209, 0.3);
-}
 
 /* ---- Recentre button ------------------------------------------------------------------------ */
 

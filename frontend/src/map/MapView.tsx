@@ -5,12 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import type { Hotspot } from "../api";
 import type { LayerData } from "../layers";
 import { satelliteTileUrl } from "../satellite";
-import type { Theme } from "../theme";
 import { LAYER_NAMES, type MapViewState } from "../view";
 import { basemapPaint } from "./basemap";
 import { FrameIcon } from "../icons";
 import { FRAME_PADDING, KALIMANTAN_BOUNDS } from "./kalimantan";
-import { OVERLAY_LAYERS, boundaryLineColor, overlayLayerSpecs } from "./overlays";
+import { OVERLAY_LAYERS, overlayLayerSpecs } from "./overlays";
 import { buildHotspotPopup } from "./popup";
 
 const HOTSPOT_SOURCE = "hotspots";
@@ -50,7 +49,7 @@ function visibility(shown: boolean): "visible" | "none" {
   return shown ? "visible" : "none";
 }
 
-function basemapStyle(theme: Theme, view: MapViewState, satelliteDate: string) {
+function basemapStyle(view: MapViewState, satelliteDate: string) {
   return {
     version: 8 as const,
     sources: {
@@ -74,7 +73,7 @@ function basemapStyle(theme: Theme, view: MapViewState, satelliteDate: string) {
         type: "raster" as const,
         source: "osm",
         layout: { visibility: visibility(view.basemap === "map") },
-        paint: basemapPaint(theme),
+        paint: basemapPaint(),
       },
       {
         id: SATELLITE_LAYER,
@@ -97,27 +96,25 @@ function toCollection(hotspots: Hotspot[]): GeoJSON.FeatureCollection {
 
 type Props = {
   hotspots: Hotspot[];
-  theme: Theme;
   view: MapViewState;
   layerData: LayerData;
   satelliteDate: string;
 };
 
-export default function MapView({ hotspots, theme, view, layerData, satelliteDate }: Props) {
+export default function MapView({ hotspots, view, layerData, satelliteDate }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [ready, setReady] = useState(false);
   // Always the latest values, so map callbacks never see stale ones.
-  const latest = useRef({ hotspots, theme, view, layerData, satelliteDate });
-  latest.current = { hotspots, theme, view, layerData, satelliteDate };
-  const paintedTheme = useRef<Theme>(theme);
+  const latest = useRef({ hotspots, view, layerData, satelliteDate });
+  latest.current = { hotspots, view, layerData, satelliteDate };
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const { theme: initialTheme, view: initialView, satelliteDate: date } = latest.current;
+    const { view: initialView, satelliteDate: date } = latest.current;
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: basemapStyle(initialTheme, initialView, date),
+      style: basemapStyle(initialView, date),
       bounds: KALIMANTAN_BOUNDS,
     });
     mapRef.current = map;
@@ -132,7 +129,7 @@ export default function MapView({ hotspots, theme, view, layerData, satelliteDat
       for (const name of LAYER_NAMES) {
         map.addSource(name, { type: "geojson", data: current.layerData[name] ?? EMPTY });
       }
-      for (const spec of overlayLayerSpecs(current.theme, current.view.basemap)) {
+      for (const spec of overlayLayerSpecs()) {
         const layer = OVERLAY_LAYERS.find((candidate) => candidate.id === spec.id)!.layer;
         map.addLayer({ ...spec, layout: { visibility: visibility(current.view.layers[layer]) } });
       }
@@ -219,29 +216,6 @@ export default function MapView({ hotspots, theme, view, layerData, satelliteDat
     map.setLayoutProperty(STREET_LAYER, "visibility", visibility(view.basemap === "map"));
     map.setLayoutProperty(SATELLITE_LAYER, "visibility", visibility(view.basemap === "satellite"));
   }, [view.basemap, ready]);
-
-  // Boundary lines must stay readable as the background changes between light, dark and satellite.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) return;
-    const color = boundaryLineColor(theme, view.basemap);
-    map.setPaintProperty("regency-lines", "line-color", color);
-    map.setPaintProperty("province-lines", "line-color", color);
-  }, [theme, view.basemap, ready]);
-
-  // Retint the street map in place when the theme changes; the map itself is never rebuilt.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || paintedTheme.current === theme) return;
-    const apply = () => {
-      for (const [property, value] of Object.entries(basemapPaint(theme))) {
-        map.setPaintProperty(STREET_LAYER, property, value);
-      }
-      paintedTheme.current = theme;
-    };
-    if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
-  }, [theme]);
 
   return (
     <>

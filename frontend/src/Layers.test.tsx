@@ -280,28 +280,18 @@ function isLight(hex: string) {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
 }
 
-test("boundary lines are dark on the light street map", async () => {
-  localStorage.setItem("siagaapi-theme", "light");
+test("boundary lines are light, so they show on the dark map", async () => {
   setup();
   await waitFor(() => expect(map()).toBeDefined());
-
-  expect(isLight(lineColor())).toBe(false);
-});
-
-test("boundary lines turn light on satellite imagery so they can be seen", async () => {
-  localStorage.setItem("siagaapi-theme", "light");
-  setup();
-  await waitFor(() => expect(map()).toBeDefined());
-
-  await userEvent.click(screen.getByRole("radio", { name: "Satelit" }));
 
   expect(isLight(lineColor())).toBe(true);
 });
 
-test("boundary lines are light on the dark theme", async () => {
-  localStorage.setItem("siagaapi-theme", "dark");
+test("boundary lines stay light on satellite imagery so they can be seen", async () => {
   setup();
   await waitFor(() => expect(map()).toBeDefined());
+
+  await userEvent.click(screen.getByRole("radio", { name: "Satelit" }));
 
   expect(isLight(lineColor())).toBe(true);
 });

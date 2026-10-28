@@ -1,5 +1,4 @@
-import type { Theme } from "../theme";
-import type { Basemap, LayerName } from "../view";
+import type { LayerName } from "../view";
 
 /** Map layer ids, listed bottom to top. Hotspots are added after these, so they stay on top. */
 export const OVERLAY_LAYERS: Array<{ id: string; layer: LayerName }> = [
@@ -11,16 +10,11 @@ export const OVERLAY_LAYERS: Array<{ id: string; layer: LayerName }> = [
 
 const PEAT = "#a855f7";
 
-/**
- * Boundary lines need to contrast with whatever is under them: pale on the dark map or satellite
- * imagery, dark on the light street map.
- */
-export function boundaryLineColor(theme: Theme, basemap: Basemap): string {
-  return theme === "dark" || basemap === "satellite" ? "#f8fafc" : "#334155";
-}
+/** Boundary lines are pale: they show on the dark map and on satellite imagery alike. */
+export const BOUNDARY_LINE_COLOR = "#f8fafc";
 
-export function overlayLayerSpecs(theme: Theme, basemap: Basemap) {
-  const lines = boundaryLineColor(theme, basemap);
+export function overlayLayerSpecs() {
+  const lines = BOUNDARY_LINE_COLOR;
   return [
     {
       id: "peat-fill",

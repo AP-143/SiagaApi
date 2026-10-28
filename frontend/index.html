@@ -3,10 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="dark" />
     <meta name="description" content="Peta pemantau titik api (hotspot) satelit di Kalimantan, hampir real-time." />
-    <meta name="theme-color" content="#f3ebdc" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#261a1d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#261a1d" />
     <title>SiagaApi</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,20 +15,8 @@
       href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500&family=Inter:wght@400;500;600;700&display=swap"
     />
     <script>
-      // Set the theme before the first paint so a dark-mode user never sees a white flash.
-      (function () {
-        var theme = null;
-        try {
-          theme = localStorage.getItem("siagaapi-theme");
-        } catch (e) {}
-        if (theme !== "light" && theme !== "dark") {
-          theme =
-            window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light";
-        }
-        document.documentElement.dataset.theme = theme;
-      })();
+      // The map is dark only; say so before the first paint so nothing flashes light.
+      document.documentElement.dataset.theme = "dark";
     </script>
   </head>
   <body>

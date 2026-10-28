@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------------------------------
-   The Landing: a quiet nature magazine. Its paper-and-ink tokens do not depend on data-theme, so
-   a dark theme chosen on the map never reaches it.
+   The Landing: a quiet nature magazine. Its paper-and-ink tokens are its own, so
+   the map's dark palette never reaches it.
    --------------------------------------------------------------------------------------------- */
 :root {
   --paper: #ece3d1;
@@ -9,6 +9,11 @@
   --ink-body: rgba(67, 40, 42, 0.72);
   --rust: #a86438;
   --hairline: rgba(67, 40, 42, 0.16);
+}
+
+/* The map is dark, the Landing is paper: keep the browser's own scrollbars with the page. */
+html:has(.landing) {
+  color-scheme: light;
 }
 
 body:has(.landing) {
