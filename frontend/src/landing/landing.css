@@ -8,6 +8,8 @@
   --ink: #43282a;
   --ink-body: rgba(67, 40, 42, 0.72);
   --rust: #a86438;
+  /* Rust for small caps labels on paper: the reference rust is only 3.3:1 there, this reaches 5:1. */
+  --rust-label: #8c4f2c;
   --hairline: rgba(67, 40, 42, 0.16);
 }
 
@@ -46,7 +48,7 @@ body:has(.landing) {
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--rust-text);
+  color: var(--rust-label);
 }
 
 /* A fixed film-grain layer over everything: fractal noise, multiplied into the paper. */

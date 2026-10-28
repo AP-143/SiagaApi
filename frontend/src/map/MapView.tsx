@@ -8,6 +8,7 @@ import { satelliteTileUrl } from "../satellite";
 import { LAYER_NAMES, type MapViewState } from "../view";
 import { basemapPaint } from "./basemap";
 import { FrameIcon } from "../icons";
+import { isPhoneViewport } from "../viewport";
 import { FRAME_PADDING, KALIMANTAN_BOUNDS } from "./kalimantan";
 import { OVERLAY_LAYERS, overlayLayerSpecs } from "./overlays";
 import { buildHotspotPopup } from "./popup";
@@ -116,6 +117,8 @@ export default function MapView({ hotspots, view, layerData, satelliteDate }: Pr
       container: containerRef.current,
       style: basemapStyle(initialView, date),
       bounds: KALIMANTAN_BOUNDS,
+      // On a phone the attribution is a small (i) button that opens, so it never covers the map.
+      attributionControl: isPhoneViewport() ? { compact: true } : undefined,
     });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
@@ -124,6 +127,12 @@ export default function MapView({ hotspots, view, layerData, satelliteDate }: Pr
       // The container may not have had its final size when the map was built, so frame again now.
       map.resize();
       frameKalimantan(map, false);
+      // MapLibre starts its compact attribution open; fold it to the (i) so it never covers the map.
+      if (isPhoneViewport()) {
+        const attribution = containerRef.current?.querySelector(".maplibregl-ctrl-attrib");
+        attribution?.classList.remove("maplibregl-compact-show");
+        attribution?.removeAttribute("open");
+      }
       const current = latest.current;
       // Boundary and peatland layers go in first, so everything below is drawn under the Hotspots.
       for (const name of LAYER_NAMES) {
