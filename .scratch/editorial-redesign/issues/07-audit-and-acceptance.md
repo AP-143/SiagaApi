@@ -14,3 +14,10 @@
 - [ ] No leftover English user-visible text and no leftover Barlow reference
 - [ ] `npm run build` (type check and bundle) and `npm test` pass; the Landing's bundle does not include MapLibre
 - [ ] The README mentions the Landing, the `/` and `/peta` addresses, and how to run both
+
+## Comments (work so far, ticket still open)
+
+- The `motion-reviewer` audit could not grade anything: MotionScore needs the Motion+ MCP server (paid, needs a login), which is not connected. No tier was invented. Re-run it once Motion+ is connected, or run `npx motionscore <url> --agent` against the dev server.
+- Done from the web-interface-guidelines pass: images carry width and height and load lazily (the hero photo loads first), and the browser bar takes the paper colour while the Landing is open.
+- Still to do from that pass: `touch-action: manipulation` on links and buttons, `translate="no"` on the "SiagaApi" wordmark, `color-scheme: light` on `.landing`, hover states for the hero pill, the nav link and the badge, a stronger focus ring on the pill over the photo, and `text-wrap: pretty` on the paragraph.
+- Still to do: replace the hero's scroll-driven gradient `height` with `scaleY` (no layout each frame); try `LazyMotion` with `m` components to shrink the Landing bundle (about 304 kB, 100 kB gzip); a browser pass at 1440x960 and at phone width in dark; a pass with real basemap tiles; the README note about `/` and `/peta`.

@@ -23,3 +23,16 @@ test("a picture with no description is decorative and hidden from assistive tech
   expect(screen.queryByRole("img")).not.toBeInTheDocument();
   expect(container.querySelector("img")).toHaveAttribute("alt", "");
 });
+
+test("a picture reserves its space and loads lazily unless it is the first thing on the page", () => {
+  const { container, rerender } = render(<ImageSlot src="/a.webp" width={480} height={480} fallback={null} />);
+  const img = () => container.querySelector("img")!;
+
+  expect(img()).toHaveAttribute("width", "480");
+  expect(img()).toHaveAttribute("height", "480");
+  expect(img()).toHaveAttribute("loading", "lazy");
+
+  rerender(<ImageSlot src="/a.webp" width={480} height={480} priority fallback={null} />);
+  expect(img()).toHaveAttribute("loading", "eager");
+  expect(img()).toHaveAttribute("fetchpriority", "high");
+});

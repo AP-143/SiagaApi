@@ -55,3 +55,21 @@ test("nowhere does the Landing call a Hotspot a confirmed fire", () => {
   expect(text).toMatch(/bukan bukti/i);
   expect(text).not.toMatch(/(dikonfirmasi|terkonfirmasi|pasti (ada )?(api|kebakaran))/i);
 });
+
+test("the browser's own bar matches the paper while the Landing is open, then the map's again", () => {
+  const metas = ["#f3ebdc", "#261a1d"].map((content) => {
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = content;
+    document.head.append(meta);
+    return meta;
+  });
+  window.history.replaceState({}, "", "/");
+  const { unmount } = render(<Root />);
+
+  expect(metas.map((meta) => meta.content)).toEqual(["#ece3d1", "#ece3d1"]);
+
+  unmount();
+  expect(metas.map((meta) => meta.content)).toEqual(["#f3ebdc", "#261a1d"]);
+  for (const meta of metas) meta.remove();
+});

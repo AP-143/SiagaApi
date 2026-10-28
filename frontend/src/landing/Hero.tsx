@@ -78,7 +78,7 @@ export default function Hero() {
       <div className="hero-frame">
         <motion.div className="hero-stage" style={{ y: drift }}>
           <motion.div className="hero-layer" style={{ filter: blur, opacity: fade }} {...settle}>
-            <ImageSlot src={LANDING_IMAGES.heroSky} fallback={null} />
+            <ImageSlot src={LANDING_IMAGES.heroSky} width={2000} height={1131} priority fallback={null} />
             {/* A soft paper veil keeps the title readable over the clouds. */}
             <div className="hero-veil" aria-hidden="true" />
           </motion.div>

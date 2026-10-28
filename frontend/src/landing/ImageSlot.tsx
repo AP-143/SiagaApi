@@ -7,10 +7,26 @@ type Props = {
   alt?: string;
   /** What to show while no picture is configured. */
   fallback: ReactNode;
+  /** The picture's size, so the page reserves its space before it loads. */
+  width?: number;
+  height?: number;
+  /** True for the first thing on the page: load it at once and first. Otherwise it loads lazily. */
+  priority?: boolean;
 };
 
-/** A place in the Landing for a picture. Today every slot shows an SVG drawing. */
-export default function ImageSlot({ src, alt = "", fallback }: Props) {
+/** A place in the Landing for a picture. Today every slot shows a photograph. */
+export default function ImageSlot({ src, alt = "", fallback, width, height, priority = false }: Props) {
   if (!src) return <>{fallback}</>;
-  return <img className="image-slot" src={src} alt={alt} />;
+  return (
+    <img
+      className="image-slot"
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : undefined}
+      decoding="async"
+    />
+  );
 }
