@@ -35,6 +35,8 @@ jobs:
     env:
       # The tests create and drop their own throwaway database next to this one.
       DATABASE_URL: postgresql://siagaapi:siagaapi@localhost:5432/siagaapi
+      # Where the chat's embedding model is kept: the Docker image bakes it in, here it is fetched once and cached.
+      FASTEMBED_CACHE_PATH: /home/runner/fastembed-models
     defaults:
       run:
         working-directory: backend
@@ -45,6 +47,10 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: /home/runner/fastembed-models
+          key: fastembed-paraphrase-multilingual-minilm-l12-v2
       - run: pip install -r requirements.txt
       - run: pytest -q
 

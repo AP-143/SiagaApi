@@ -171,3 +171,62 @@ def test_a_question_about_who_does_something_is_never_answered_with_a_count(real
     reply = ask(real_knowledge, "siapa yang memadamkan kebakaran hutan dan lahan?")
 
     assert reply["kind"] == "knowledge"
+
+
+# ---- Questions worded with words the documents never use ---------------------------------------
+#
+# Full-text search cannot find these: they share no stem with the passage. They are answered through
+# the meaning of the heading (the embedding search), and only when it is close enough.
+SYNONYMS = [
+    ("kenapa api di gambut tidak mau padam?", "Mengapa kebakaran gambut sulit dipadamkan?"),
+    ("kenapa tanah gambut susah dimatikan apinya?", "Mengapa kebakaran gambut sulit dipadamkan?"),
+    ("mengapa asap dari kebakaran gambut begitu pekat?", "Mengapa kebakaran gambut menghasilkan asap tebal?"),
+    ("siapa yang bertugas memadamkan api hutan?", "Siapa yang memadamkan kebakaran hutan dan lahan?"),
+    (
+        "kenapa titik api dengan kepercayaan rendah tidak ditampilkan?",
+        "Mengapa titik api berkepercayaan rendah disembunyikan?",
+    ),
+    ("seberapa sering informasi titik api ter-update?", "Seberapa sering data titik api diperbarui?"),
+    (
+        "bagaimana cara melindungi diri dari asap kebakaran?",
+        "Bagaimana melindungi kesehatan saat ada kebakaran di sekitar saya?",
+    ),
+]
+
+# Close in subject to a passage, but not something the documents say.
+CLOSE_BUT_UNCOVERED = [
+    "kapan terakhir kali terjadi kebakaran besar?",
+    "bagaimana cara mengobati sesak napas?",
+    "apakah masker kain cukup untuk melindungi dari asap?",
+    "bagaimana cara daftar jadi relawan?",
+    "berapa jumlah penduduk kalimantan?",
+]
+
+
+@pytest.mark.parametrize("question, heading", SYNONYMS)
+def test_a_question_worded_with_other_words_finds_the_passage_by_meaning(real_knowledge, question, heading):
+    reply = ask(real_knowledge, question)
+
+    assert reply["kind"] == "knowledge", reply["answer"]
+    assert reply["data"]["sources"][0]["heading"] == heading
+
+
+@pytest.mark.parametrize("question", CLOSE_BUT_UNCOVERED)
+def test_a_question_close_in_meaning_but_not_covered_is_still_turned_away(real_knowledge, question):
+    assert ask(real_knowledge, question)["kind"] == "unsupported"
+
+
+def test_without_the_embedding_model_the_chat_still_answers_by_words(real_knowledge, monkeypatch):
+    from app import knowledge
+
+    def unavailable(texts):
+        raise RuntimeError("no embedding model")
+
+    monkeypatch.setattr(knowledge.embeddings, "embed", unavailable)
+
+    reply = ask(real_knowledge, "kenapa gambut sulit dipadamkan?")
+    synonym = ask(real_knowledge, "kenapa api di gambut tidak mau padam?")
+
+    assert reply["kind"] == "knowledge"
+    assert reply["data"]["sources"][0]["heading"] == "Mengapa kebakaran gambut sulit dipadamkan?"
+    assert synonym["kind"] == "unsupported"  # words alone cannot find it, and nothing broke trying

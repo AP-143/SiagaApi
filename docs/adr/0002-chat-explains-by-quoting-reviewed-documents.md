@@ -1,6 +1,6 @@
 # The chat explains by quoting reviewed documents, found with full-text search first
 
-Status: accepted
+Status: accepted, partly superseded by ADR 0003 (retrieval is no longer full-text search only, and a model may reword an explanation except for quote-only documents)
 
 People ask the chat things the database cannot answer: what a Hotspot is, what Confidence means, why peat fires are hard to put out. For those questions the answer is a passage of a reviewed document, quoted word for word with its source and the date we reviewed it. Nothing is paraphrased, so the chat cannot say more than the document says, and a passage that does not fit well enough is not shown: the answer is then "not in our sources" instead of the nearest-looking text.
 

@@ -1288,3 +1288,50 @@ body {
     border-top-color: var(--track-off);
   }
 }
+
+.simple-mode-note {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* Unlike the standing "Hotspot" note, this is not repeated in the answers, so it stays on a phone too. */
+.chat-privacy {
+  flex: none;
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  /* The question box was 66px tall (44px of content plus padding and border) next to a 44px button. */
+  .chat-form textarea {
+    box-sizing: border-box;
+  }
+
+  /* The privacy note is two lines on a phone and must fit inside the card. The card cannot grow (the
+     stack above the map is already as tall as it may be), so the conversation gives up a little. */
+  .chat-panel:has(.chat-privacy) .chat-log {
+    min-height: 80px;
+  }
+}
+
+/* The label under an answer the model wrote, and the passage it rests on, set like a quotation. */
+.ai-label {
+  margin-top: 8px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.chat-quote {
+  margin: 6px 0 0;
+  padding-left: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  border-left: 2px solid var(--border);
+}

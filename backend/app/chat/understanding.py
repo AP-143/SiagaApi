@@ -28,7 +28,13 @@ PEAT = re.compile(r"gambut")
 LOW_CONFIDENCE = re.compile(r"kepercayaan\s+rendah|confidence\s+rendah|termasuk\s+(yang\s+)?(rendah|low)")
 PROVINCE_WORD = re.compile(r"\bprovinsi\b")
 
-NUMBER_UNIT = re.compile(r"\b(\d+)\s*(jam|hari|minggu|pekan|bulan)\b")
+# A greeting or thanks and nothing else: "halo, berapa titik api di Sambas?" is a question, not a greeting.
+GREETING = re.compile(
+    r"(halo|hallo|hai|hi|hello|assalamualaikum|selamat (pagi|siang|sore|malam)|terima ?kasih|makasih|thanks?)"
+    r"( (kak|min|ya|banyak|bot|sekali))*"
+)
+
+NUMBER_UNIT =re.compile(r"\b(\d+)\s*(jam|hari|minggu|pekan|bulan)\b")
 UNIT_HOURS = {"jam": 1, "hari": 24, "minggu": 168, "pekan": 168, "bulan": 720}
 WORD_WINDOWS = [
     (re.compile(r"\b(sehari)\b"), 24),
@@ -54,6 +60,7 @@ class Intent(StrEnum):
     COUNT = "count"
     RANKING = "ranking"
     FRESHNESS = "freshness"
+    GREETING = "greeting"
     UNSUPPORTED = "unsupported"
     UNSUPPORTED_WINDOW = "unsupported_window"
     CLARIFY = "clarify"
@@ -102,8 +109,19 @@ def _window(text: str) -> str | None:
     return WINDOW_BY_HOURS.get(hours)
 
 
+def asks_for_a_period_the_map_lacks(message: str) -> bool:
+    """True when the person's own words name a period the map does not offer ("kemarin", "bulan lalu").
+
+    Read from their words by code, so a language model that quietly falls back to the default period
+    cannot answer a different question than the one asked.
+    """
+    return _window(normalize(message)) is None
+
+
 def understand(message: str, places: PlaceIndex) -> Question:
     text = normalize(message)
+    if GREETING.fullmatch(text):
+        return Question(Intent.GREETING)
 
     # "When was it last updated?" is about the data; "how often is it updated?" is an explanation.
     asks_how_often = bool(FREQUENCY.search(text))

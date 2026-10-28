@@ -13,6 +13,27 @@ from app.knowledge import KnowledgeError, load_knowledge
 from app.peatlands import load_peatlands_from_file
 
 
+def evaluate_model(model_name: str | None, verbose: bool) -> None:
+    """Run the evaluation questions through the model configured in LLM_* and print how it did."""
+    from datetime import datetime, timezone
+
+    from app.chat.model_http import OpenAICompatibleClient
+    from app.model_eval import default_cases, format_report, run_cases
+
+    settings = load_settings()
+    name = model_name or settings.llm_model
+    if not settings.llm_base_url or not name:
+        raise SystemExit("Set LLM_BASE_URL and LLM_MODEL (or pass --model) to say which model to evaluate.")
+    model = OpenAICompatibleClient(settings.llm_base_url, name, settings.llm_api_key, settings.llm_timeout_seconds)
+    try:
+        with psycopg.connect(settings.database_url) as conn:
+            load_knowledge(conn, settings.knowledge_dir)  # the questions are asked of the real documents
+            results = run_cases(conn, model, default_cases(), datetime.now(timezone.utc))
+    except KnowledgeError as error:
+        raise SystemExit(f"Knowledge not loaded: {error}")
+    print(format_report(name, results, verbose))
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(prog="python -m app.cli")
@@ -49,6 +70,13 @@ def main() -> None:
         "directory", nargs="?", help="Folder of .md documents (default: KNOWLEDGE_DIR or backend/knowledge)"
     )
 
+    evaluate = commands.add_parser(
+        "evaluate-model",
+        help="Run the chat questions through the configured language model and report how it did (manual, not CI)",
+    )
+    evaluate.add_argument("--model", help="Model name to use instead of LLM_MODEL")
+    evaluate.add_argument("--verbose", action="store_true", help="List every question, not only the ones that went wrong")
+
     ingest = commands.add_parser("ingest", help="Fetch Hotspots from NASA FIRMS")
     ingest.add_argument(
         "--loop", action="store_true", help="Run every 30 minutes instead of once"
@@ -81,6 +109,8 @@ def main() -> None:
         except KnowledgeError as error:
             raise SystemExit(f"Knowledge not loaded: {error}")
         print(f"Loaded {count} passages from {directory}.")
+    elif args.command == "evaluate-model":
+        evaluate_model(args.model, args.verbose)
     elif args.command == "ingest":
         settings = load_settings()
         if args.loop:

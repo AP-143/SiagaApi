@@ -27,9 +27,12 @@ function json(body: unknown, init: ResponseInit = {}) {
 function setup(
   chat: (url: URL, init?: RequestInit) => Response | Promise<Response> = () => json(COUNT_REPLY),
   address = "/",
+  /** What /chat/status says; left out, the route does not exist, like an older server. */
+  status?: { ai: boolean },
 ) {
   window.history.replaceState({}, "", address);
   const fetchMock = mockApi({
+    ...(status ? { "/chat/status": status } : {}),
     "/hotspots": collection(SAMBAS_HOTSPOT),
     "/hotspots/counts": [],
     "/provinces": [],
@@ -701,4 +704,172 @@ test("a message that was just sent is scrolled to the bottom so the wait is visi
   await within(log).findByText("Sedang menjawab…");
 
   await waitFor(() => expect(log.scrollTop).toBe(2000));
+});
+
+// ---- The AI layer ---------------------------------------------------------------------------------
+
+async function statusAsked(fetchMock: ReturnType<typeof mockApi>) {
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([url]) => new URL(String(url), "http://localhost").pathname === "/api/chat/status",
+      ),
+    ).toBe(true),
+  );
+}
+
+test("when the AI is on, the chat says questions are processed by an AI service and to write no personal data", async () => {
+  setup(undefined, "/", { ai: true });
+  await openChat();
+
+  expect(await screen.findByText(/diproses layanan AI/)).toBeInTheDocument();
+  expect(screen.getByText(/data pribadi/)).toBeInTheDocument();
+});
+
+test("when the AI is off, the chat does not warn about an AI service", async () => {
+  const fetchMock = setup(undefined, "/", { ai: false });
+  await openChat();
+  await statusAsked(fetchMock);
+
+  expect(screen.queryByText(/layanan AI/)).toBeNull();
+});
+
+test("when the server cannot say whether the AI is on, the chat does not warn about an AI service", async () => {
+  const fetchMock = setup();
+  await openChat();
+  await statusAsked(fetchMock);
+
+  expect(screen.queryByText(/layanan AI/)).toBeNull();
+});
+
+test("an answer given without the AI says the chat is in simple mode", async () => {
+  setup(() =>
+    json({ kind: "unsupported", answer: "Maaf, belum bisa menjawab.", data: {}, simple_mode: true }),
+  );
+  const log = await openChat();
+
+  await ask("pertanyaan bebas");
+
+  expect(await within(log).findByText(/Mode sederhana/)).toBeInTheDocument();
+});
+
+test("an ordinary answer carries no simple mode notice", async () => {
+  setup();
+  const log = await openChat();
+
+  await ask("Berapa titik api di Kalimantan Tengah hari ini?");
+
+  await within(log).findByText(/3\.295 titik api/);
+  expect(screen.queryByText(/Mode sederhana/)).toBeNull();
+});
+
+// ---- Follow-up questions --------------------------------------------------------------------------
+
+function sentBody(fetchMock: ReturnType<typeof mockApi>, index: number) {
+  return JSON.parse(String(chatRequests(fetchMock)[index][1]?.body));
+}
+
+test("a second question carries the first question and its answer, so a follow-up can be understood", async () => {
+  const fetchMock = setup();
+  const log = await openChat();
+
+  await ask("Berapa titik api di Kalimantan Tengah hari ini?");
+  await within(log).findByText(/3\.295 titik api/);
+  await ask("kalau seminggu?");
+  await waitFor(() => expect(chatRequests(fetchMock)).toHaveLength(2));
+
+  expect(sentBody(fetchMock, 1)).toEqual({
+    message: "kalau seminggu?",
+    history: [
+      { role: "user", text: "Berapa titik api di Kalimantan Tengah hari ini?" },
+      { role: "assistant", text: COUNT_REPLY.answer },
+    ],
+  });
+});
+
+test("only the last few turns are sent, never the greeting", async () => {
+  const fetchMock = setup();
+  const log = await openChat();
+
+  for (const [answered, question] of ["satu", "dua", "tiga", "empat"].entries()) {
+    await ask(question);
+    await waitFor(() => expect(within(log).getAllByText(/3\.295 titik api/)).toHaveLength(answered + 1));
+  }
+  await ask("lima");
+  await waitFor(() => expect(chatRequests(fetchMock)).toHaveLength(5));
+
+  const history = sentBody(fetchMock, 4).history as Array<{ role: string; text: string }>;
+  expect(history).toHaveLength(6);
+  expect(history.map((turn) => turn.text)).not.toContain(expect.stringContaining("Halo!"));
+  expect(history[history.length - 2]).toEqual({ role: "user", text: "empat" });
+});
+
+test("a question that failed is not offered to the server as something that was answered", async () => {
+  let calls = 0;
+  const fetchMock = setup(() => (++calls === 1 ? new Response("down", { status: 500 }) : json(COUNT_REPLY)));
+  const log = await openChat();
+
+  await ask("pertama");
+  await within(log).findByText(/chat sedang tidak bisa dihubungi/);
+  await ask("kedua");
+  await waitFor(() => expect(chatRequests(fetchMock)).toHaveLength(2));
+
+  expect(sentBody(fetchMock, 1).history).toEqual([{ role: "user", text: "pertama" }]);
+});
+
+// ---- Answers the model wrote from the documents ---------------------------------------------------
+
+function groundedReply(quote = "Titik api adalah hasil deteksi satelit."): Reply {
+  return {
+    kind: "knowledge",
+    answer:
+      "Titik api adalah tanda panas yang dilihat satelit, bukan bukti ada kebakaran.\n\n" +
+      "Sumber: Tentang titik api (NASA FIRMS), ditinjau 16 Oktober 2026.",
+    data: { sources: [NASA_SOURCE], related: [], model_written: true, quote },
+  };
+}
+
+test("an answer the model wrote says so, with the quotation it rests on under it", async () => {
+  setup(() => json(groundedReply()));
+  const log = await openChat();
+
+  await ask("apa itu hotspot?");
+
+  expect(await within(log).findByText(/tanda panas yang dilihat satelit/)).toBeInTheDocument();
+  expect(within(log).getByText(/Dijawab AI/)).toBeInTheDocument();
+  const quote = within(log).getByText("Titik api adalah hasil deteksi satelit.");
+  expect(quote.closest("blockquote")).not.toBeNull();
+  expect(within(log).getByText(/Sumber: Tentang titik api/)).toBeInTheDocument();
+  expect(within(log).getByRole("link", { name: /Buka sumber/ })).toBeInTheDocument();
+});
+
+test("a plain quotation carries no AI label and no separate quotation", async () => {
+  setup(() => json(knowledgeReply()));
+  const log = await openChat();
+
+  await ask("apa itu hotspot?");
+
+  await within(log).findByText(/Titik api adalah hasil deteksi satelit/);
+  expect(screen.queryByText(/Dijawab AI/)).toBeNull();
+  expect(log.querySelector("blockquote")).toBeNull();
+});
+
+test("the quotation under an answer is plain text, never markup", async () => {
+  setup(() => json(groundedReply("<img src=x onerror=alert(1)> kutipan")));
+  const log = await openChat();
+
+  await ask("apa itu hotspot?");
+
+  expect(await within(log).findByText(/kutipan/)).toBeInTheDocument();
+  expect(log.querySelector("img")).toBeNull();
+});
+
+test("a data answer is not labelled as written by the AI", async () => {
+  setup();
+  const log = await openChat();
+
+  await ask("Berapa titik api di Kalimantan Tengah hari ini?");
+
+  await within(log).findByText(/3\.295 titik api/);
+  expect(screen.queryByText(/Dijawab AI/)).toBeNull();
 });

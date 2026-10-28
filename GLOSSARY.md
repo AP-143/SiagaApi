@@ -39,3 +39,15 @@ _Avoid_: Accuracy, probability, certainty
 **Responder**:
 A person who acts on Hotspots in the field or in coordination, such as BPBD, Manggala Agni, or local government staff. The primary audience; the map itself is open to the public without login.
 _Avoid_: User (when the primary audience is meant), operator
+
+**Grounded answer**:
+A chat explanation written by the language model only from the reviewed passages retrieval returned, naming the passages it used. The quotation and source line are always shown with it. Numbers and places are never part of it.
+_Avoid_: AI answer, generated answer
+
+**Quote-only document**:
+A reviewed knowledge document whose passages are only ever shown word for word, never reworded by the model. The smoke, health and field-action documents are quote-only.
+_Avoid_: Locked document, protected document
+
+**Simple mode**:
+The chat working without the language model, because it is turned off, down, slow, rate limited or over its budget. Answers come from the rules and from verbatim quotations, and the panel says so.
+_Avoid_: Offline mode, degraded mode

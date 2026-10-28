@@ -200,6 +200,7 @@ def test_replacing_the_documents_replaces_what_can_be_answered(knowledge_app):
         ("---\ntitle: T\nsource: S\nreviewed: kemarin\n---\n\n## A\n\nIsi.\n", "reviewed"),
         ("---\ntitle: T\nsource: S\nreviewed: 2026-01-01\nurl: javascript:alert(1)\n---\n\n## A\n\nIsi.\n", "url"),
         ("---\ntitle: T\nsource: S\nreviewed: 2026-01-01\n---\n\n## A\n", "empty"),
+        ("---\ntitle: T\nsource: S\nreviewed: 2026-01-01\nverbatim: kadang\n---\n\n## A\n\nIsi.\n", "verbatim"),
         ("---\ntitle: T\nsource: S\nreviewed: 2026-01-01\n---\n\nHanya teks tanpa bagian.\n", "section"),
     ],
 )

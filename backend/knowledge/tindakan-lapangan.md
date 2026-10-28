@@ -2,6 +2,7 @@
 title: Tindakan lapangan dan batas SiagaApi
 source: Kebijakan isi SiagaApi (merujuk siaran pers KLHK 18 September 2017)
 reviewed: 2026-10-16
+verbatim: true
 ---
 
 ## Apa yang harus saya lakukan jika melihat kebakaran atau titik api di dekat saya?

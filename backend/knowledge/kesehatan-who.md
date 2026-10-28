@@ -3,6 +3,7 @@ title: Panduan kesehatan saat kebakaran hutan dari WHO Europe
 source: WHO Europe, Public health advice during the wildfires (tanya jawab, 16 Juni 2023), diterjemahkan oleh tim SiagaApi
 url: https://www.who.int/europe/news-room/questions-and-answers/item/public-health-advice-during-the-wildfires--how-to-protect-your-health-and-keep-safe
 reviewed: 2026-10-17
+verbatim: true
 ---
 
 ## Apa risiko kesehatan dari asap kebakaran hutan?

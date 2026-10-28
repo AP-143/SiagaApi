@@ -8,9 +8,13 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 
 from app import queries
+from app.chat.budget import BudgetedModel
+from app.chat.explain import ExplanationCache
+from app.chat.model import ModelClient
+from app.chat.model_http import OpenAICompatibleClient
 from app.chat.service import answer_question
 from app.config import load_settings
 from app.knowledge import load_knowledge
@@ -22,8 +26,18 @@ from app.timefmt import iso_utc
 MAX_QUESTION_LENGTH = 500
 
 
+MAX_HISTORY_TURNS = 6
+
+
+class Turn(BaseModel):
+    role: Literal["user", "assistant"]
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_QUESTION_LENGTH)]
+
+
 class ChatRequest(BaseModel):
     message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_QUESTION_LENGTH)]
+    # The browser's last few turns, so a follow-up can be understood. The server keeps nothing.
+    history: Annotated[list[Turn], Field(max_length=MAX_HISTORY_TURNS)] = []
 
 
 def utc_now() -> datetime:
@@ -34,8 +48,27 @@ def create_app(
     clock: Callable[[], datetime] = utc_now,
     rate_limit_per_minute: int | None = None,
     chat_rate_limit_per_minute: int | None = None,
+    model: ModelClient | None = None,
+    model_calls_per_minute: int | None = None,
+    model_calls_per_day: int | None = None,
 ) -> FastAPI:
     settings = load_settings()
+    if model is None and settings.llm_base_url:
+        model = OpenAICompatibleClient(
+            settings.llm_base_url,
+            settings.llm_model,
+            settings.llm_api_key,
+            settings.llm_timeout_seconds,
+        )
+    if model is not None:
+        # A free quota belongs to the whole application, so it is spent here, once, for every client.
+        model = BudgetedModel(
+            model,
+            model_calls_per_minute or settings.llm_calls_per_minute,
+            model_calls_per_day or settings.llm_calls_per_day,
+            clock,
+        )
+    explanations = ExplanationCache()  # model-written explanations already given, kept for this process
     limiter = RateLimiter(rate_limit_per_minute or settings.rate_limit_per_minute, clock)
     # A separate allowance, so asking a lot never uses up the map and the map never uses up the chat.
     chat_limiter = RateLimiter(
@@ -99,11 +132,18 @@ def create_app(
         """The WHERE clause shared by the Hotspot list and the per-Regency counts."""
         return hotspot_where(clock(), window, province, regency, min_confidence, peat_only)
 
+    @app.get("/chat/status")
+    def chat_status():
+        # Only configuration: the panel needs to know before the first question whether to warn
+        # that questions go to an AI service.
+        return {"ai": model is not None}
+
     @app.post("/chat")
     def chat(body: ChatRequest, request: Request):
         # POST only so the question travels in the body; it reads data and never changes any.
         with request.app.state.pool.connection() as conn:
-            return answer_question(conn, body.message, clock())
+            history = [(turn.role, turn.text) for turn in body.history]
+            return answer_question(conn, body.message, clock(), model, history, explanations)
 
     @app.get("/freshness")
     def freshness(request: Request):

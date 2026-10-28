@@ -1,6 +1,6 @@
 # Chatbot
 
-Status: **data questions, the chat panel, a stricter chat rate limit, and explanations quoted from reviewed documents are done.** There is no language model and no embedding model. See `docs/adr/0001-chatbot-numbers-come-from-code.md` and `docs/adr/0002-chat-explains-by-quoting-reviewed-documents.md` for why it is built this way.
+Status: **data questions, the chat panel, a stricter chat rate limit, explanations quoted from reviewed documents, and an optional AI layer are done.** The chat works on rules and full-text search alone; a language model, when configured, makes it understand looser wording, follow up on the previous question, and explain in its own words. See `docs/adr/0001-chatbot-numbers-come-from-code.md`, `docs/adr/0002-chat-explains-by-quoting-reviewed-documents.md` (partly superseded) and `docs/adr/0003-ai-layer-is-optional-grounded-and-swappable.md` for why it is built this way, and the section "The AI layer" below for how it behaves.
 
 ## The chat panel
 
@@ -65,9 +65,62 @@ The passage text, quoted or closely based on the source.
 
 ### Evaluation
 
-`backend/tests/test_knowledge_eval.py` asks the real documents 50 questions people might plausibly ask and checks which passage answers each, asks 19 questions the documents do not cover (including medical and personal ones) and checks they are turned away, and checks that every passage can be found by asking its own heading. It runs with the normal tests (retrieval is deterministic) and has found real faults each time it grew: counting questions swallowing explanations, the wrong passage winning a tie, a "kapan ..." question taken for a place name, and a threshold so lenient that "how do I make a map?" was answered with how to make a smoke-safe room. One wrong answer is known and written down as a strict `xfail` ("is my house safe from smoke?" is answered with the general passage on a smoke-safe room). When you add or reword a document, add the questions it should answer; a plausible question that fails for want of a synonym belongs there as a strict `xfail`, because a pile of such failures is the evidence that vector search is worth its cost.
+`backend/tests/test_knowledge_eval.py` asks the real documents 50 questions people might plausibly ask and checks which passage answers each, asks 19 questions the documents do not cover (including medical and personal ones) and checks they are turned away, and checks that every passage can be found by asking its own heading. It also asks 7 synonym questions (found by the meaning of the heading) and 5 that are close in subject but not covered (turned away). It runs with the normal tests (retrieval is deterministic) and has found real faults each time it grew: counting questions swallowing explanations, the wrong passage winning a tie, a "kapan ..." question taken for a place name, and a threshold so lenient that "how do I make a map?" was answered with how to make a smoke-safe room. One wrong answer is known and written down as a strict `xfail` ("is my house safe from smoke?" is answered with the general passage on a smoke-safe room). When you add or reword a document, add the questions it should answer; a plausible question that fails for want of a synonym belongs there as a strict `xfail`, because a pile of such failures is the evidence that vector search is worth its cost.
 
 Not covered: how real people phrase things. The question list is ours. If the chat is ever given a way to log unanswered questions, that is a separate privacy decision (opt-in, no personal data).
+
+### Hybrid retrieval
+
+Full-text search goes first, as above. A search by the meaning of the headings follows for what the words missed: each heading is embedded by a small multilingual model (`paraphrase-multilingual-MiniLM-L12-v2`, ONNX through fastembed, baked into the Docker image, no network at run time), stored as an array column, and compared with the question in the application. A heading is offered only if it is at least 0.85 similar to the question (`MIN_SIMILARITY` in `app/knowledge.py`). pgvector was the first plan and was dropped for now (ADR 0003 says why).
+
+Measured with the evaluation: fitting paraphrases scored 0.85 to 0.96 and the closest question the documents do not answer scored 0.80, so 0.85 separates them, with a thin margin and only about seventy questions of evidence. Four synonym questions that were turned away before are now answered ("kenapa api di gambut tidak mau padam?" finds the passage on why peat fires are hard to put out), seven synonym and five close-but-uncovered questions were added to the evaluation, and none of the original 50 answerable and 19 unanswerable questions changed. Fitting paraphrases that score 0.77 to 0.82 are still turned away; that is the intended direction of the error. Full passage texts were also tried and told answerable from unanswerable questions worse than headings alone. If the embedding model is missing, the chat logs a warning and searches by words only.
+
+## The AI layer
+
+The chat works without it. With `LLM_BASE_URL` set (see the README), a language model helps in four bounded ways; whatever it writes is checked by code before it is used (ADR 0003).
+
+- **Understanding.** The rules and the documents go first. Only when they have nothing does the model turn the question into a small JSON request (count, place, window), which is validated against the places in the database and the windows the map offers. An unknown place is "unknown place", an ambiguous one is a clarifying question, a window the map lacks is refused: never a guess, never "all of Kalimantan" by default. The numbers are then counted by the same code as the map.
+- **Follow-ups.** The panel sends the last 6 messages (never the greeting or an error) with each question; the server stores nothing. When the new question is a fragment ("kalau seminggu?", "bagaimana dengan Kalimantan Barat?": fewer than 3 meaningful words) that the rules cannot read, the model rewrites it as a standalone question (at most 500 characters), which goes through the rules like any other. A complete question is never rewritten with the context of earlier turns, because that bent a medicine question into one about peat when tried live. With no working model, a follow-up gets "please write the full question", not a wrong answer.
+- **Explanations.** The model gets only the retrieved passages and must name the ones it used. Code checks that they include the best-found passage (a number that names no passage is ignored, since small models add one too many), that its text brings in no number or place the passages do not contain, and that it is a sensible length; otherwise the reply is the passage word for word, as before. A model-written answer is labelled "Dijawab AI dari sumber di bawah", with the passage quoted under it and the source line. The source always comes from the document. Repeated questions are answered from a cache (keyed by the question and the passages' text, so an edited document is never served from an old entry), with no second model call.
+- **Quote-only documents.** A document with `verbatim: true` in its front matter is never sent to the model: its passages are shown word for word. The smoke and health documents and the field-action document are marked, because their sources differ in detail (WHO advises an FFP2/N95 mask, Kemenkes does not for children and pregnant women) and a small rewording can change the meaning.
+- **Greetings** ("halo", "terima kasih") are answered by the rules with the example questions, without the model.
+
+User text, the history and the passages are passed to the model as delimited data under a fixed instruction (angle brackets are removed so text cannot close its wrapper); the model has no tools.
+
+### Simple mode
+
+If the model is not configured, nothing changes and the panel says nothing. If it is configured but cannot help (timeout, error, unreadable output, or a spent budget), the chat answers from the rules and the reply carries `simple_mode: true`; the panel then says "Mode sederhana". A question never fails because of the model.
+
+There is a budget for the whole application (not per visitor, because that is how free tiers count): `LLM_CALLS_PER_MINUTE` (20) and `LLM_CALLS_PER_DAY` (500), as rolling windows kept per process. A skipped call is logged as "skipped" with the reason and nothing else. This is separate from the per-client chat limit above.
+
+### Privacy
+
+Questions may go to a hosted provider, so when the AI layer is on the panel says so under the question box ("Pertanyaan diproses layanan AI pihak ketiga. Jangan menulis data pribadi."), including on a phone. Only the question, the last turns and public passages are sent. Nothing is logged or stored. Prefer a provider that does not train on prompts and re-read its terms before using it (limits and policies change).
+
+### Choosing a model
+
+`docker compose run --rm api python -m app.cli evaluate-model --model <name> [--verbose]` runs 96 questions through the real pipeline with the model named (or `LLM_MODEL`): 50 explanation questions, 7 synonyms, 24 the documents do not cover, 5 free-form counts, 4 follow-ups, 2 greetings and 4 hostile ones. It is manual and never part of CI. It prints, per group, how many were right, how many model calls failed ("simple mode"), how many explanations the model wrote, and the mean and slowest time.
+
+Measured on 2026-10-28 on a laptop (CPU only, 16 GB, Ollama in Docker), temperature 0:
+
+| Model (Ollama) | Right | Free-form | Follow-up | Calls that failed | Mean / slowest |
+|---|---|---|---|---|---|
+| `qwen2.5:3b` (about 1.9 GB) | **96/96** | 5/5 | 4/4 | 0 | 2.2 s / 13.2 s |
+| `qwen2.5:1.5b` (about 1 GB) | 93/96 | 5/5 | 1/4 | 27 | 1.1 s / 6.5 s |
+| `llama3.2:3b` (about 2 GB) | 91/96 | 1/5 | 4/4 | 0 | 1.9 s / 14.9 s |
+
+**Recommended local model: `qwen2.5:3b`.** The 1.5B model is faster but often cannot answer in the JSON the chat needs (27 of 48 calls) and cannot follow up; the safe fallbacks catch that, but it is "simple mode" much of the time. Llama 3.2 3B reads Indonesian free-form questions worst. These are the only three tried.
+
+How to read the numbers:
+- **The questions are ours, and the code was fixed against them.** Running the evaluation found real faults, each now fixed with a test: a model that proposed a count for any question it did not understand (medicine questions were answered with a Hotspot count), a model that "corrected" an unknown place into a known one (so the place is now always read from the person's own words by code), `Authorization: Bearer ` with an empty key breaking a local server, a short follow-up answered with an unrelated document that happened to share its two words, and a quotation that was not the best-found passage. So 96/96 shows the pipeline works for these questions, not how it will do with real people. A model that is better on this list is not guaranteed better on theirs.
+- **Run to run.** At temperature 0 two runs of the same model on the same code gave identical results. All three rows were measured with the same final code.
+- **Memory.** With the 3B model loaded the Ollama container held about 2.4 GiB (Docker Desktop gives the whole VM about 7.4 GiB here); the 1.5B model needs about half of that. Running Docker, the model and the tests together on a 16 GB laptop got the machine close to out of memory once, so close other heavy programs before an evaluation.
+- **Speed.** The times are on a CPU, with the model already loaded; the first question after a model is loaded takes several seconds longer. A host with fewer or slower cores will be slower, which is why `LLM_TIMEOUT_SECONDS` can be raised and why simple mode exists.
+- Hosted free APIs were **not** measured (no key was created). Their limits and data policies change often; re-check them in the provider's console, and run the same evaluation against the model before relying on it.
+
+### Reply fields
+
+`simple_mode` (only when true), `data.model_written` and `data.quote` (only on a model-written explanation), and `GET /chat/status` returning `{"ai": true|false}` (configuration only, for the panel). Everything else is as in the table above.
 
 ## Smoke and health guidance
 
@@ -89,10 +142,15 @@ The chat has its own bucket, apart from the map: 20 questions per minute per cli
 - No number is given for an unknown, ambiguous or unsupported question.
 - The reply never echoes arbitrary user text (an unknown place name is limited to letters and spaces, 40 characters).
 - Asking changes no stored data; user text only ever reaches the database as query parameters.
+- No number, place name or source in a reply comes from model text: counts and places come from the database, sources from the documents, and a model-written explanation that brings in a number or a place its passages do not contain is replaced by the quotation.
+- Quote-only passages never reach the model.
+- With no model configured the chat behaves as it did before the AI layer, and a model that fails, is slow or is over budget never makes a question fail.
+- The model's key never appears in a response, an error message or a log line, and questions are never logged.
 
 ## Not built yet
 
-1. **Vector search.** Only worth it if the evaluation shows real questions missing because of wording. It needs a database image with pgvector and an embedding model: a local open-source one (nothing is installed on this machine, by decision) or a free API that requires an account and a key. Indonesian retrieval quality would have to be measured on our own questions first. Answers would still quote the document and show the source.
-2. **A language model for free-form phrasing.** Only to choose among the same structured intents; numbers and places stay in code (ADR 0001). A free or low-cost provider needs an account and API key the project owner creates; free tiers have rate limits and may use prompts to improve the provider's products, so no personal data should be sent.
+1. **Hosting.** Where the API, the database and the model run in production is a separate piece of work. Free options found (October 2026): a single Oracle Cloud Always Free ARM VM (2 OCPU and 12 GB, needs a card for sign-up) can run everything including a small local model, slowly; without a card, a static frontend plus a free hosted database plus a free hosted model API is possible but leaves the always-on API without a home. Re-check all of it before relying on it.
+2. **pgvector,** only if the knowledge base grows to thousands of passages (the embeddings are plain arrays today, compared in the application).
 3. **More documents.** BNPB, KLHK, Manggala Agni and BMKG guidance, and the newest Kemenkes statements, have to come from a document the project owner supplies or approves; those sites refuse automated access, so someone has to fetch the text.
-4. **A cost cap** if a paid model is ever used, and a rate limit shared across several API processes (today the counter is per process).
+4. **A budget and a rate limit shared across several API processes** (today both counters, and the explanation cache, are per process), and a cost cap if a paid model is ever used.
+5. **Review of the health documents** by someone qualified before the chat is public (see above), and a check of any provider's data terms before sending it real questions.
