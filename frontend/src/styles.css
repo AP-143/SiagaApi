@@ -350,21 +350,9 @@ body {
   padding: 2px 14px 14px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  animation: fade-in 160ms ease-out;
 }
 
 
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 
 /* ---- Form controls -------------------------------------------------------------------------- */
 
@@ -1335,4 +1323,17 @@ body {
     width: 44px;
     height: 44px;
   }
+}
+
+/* While the theme is switching, colours cross-fade instead of jumping. */
+.theme-fade,
+.theme-fade *,
+.theme-fade *::before,
+.theme-fade *::after {
+  transition:
+    background-color 250ms ease,
+    color 250ms ease,
+    border-color 250ms ease,
+    fill 250ms ease,
+    stroke 250ms ease !important;
 }

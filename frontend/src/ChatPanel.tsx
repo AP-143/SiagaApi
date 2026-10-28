@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "motion/react";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { useChat } from "./chat";
@@ -19,6 +20,15 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
   const { messages, busy, aiOn, ask } = useChat();
   const [draft, setDraft] = useState("");
   const logRef = useRef<HTMLDivElement>(null);
+  // A new message fades in and rises a little; with reduced motion it is simply there.
+  const reduced = useReducedMotion();
+  const ARRIVE = reduced
+    ? {}
+    : {
+        initial: { opacity: 0, y: 8 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.2, ease: [0.2, 0.7, 0.2, 1] as const },
+      };
 
   // Once a conversation is under way: a question just sent goes to the bottom, with the wait under
   // it; an answer is read from its first line, so the log goes to the top of the answer rather than
@@ -59,7 +69,12 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
       <Collapsible label="Tanya" icon={<ChatIcon />} open={open} onToggle={onToggle}>
         <div className="chat-log" role="log" aria-label="Percakapan" aria-live="polite" ref={logRef}>
           {messages.map((message) => (
-            <div key={message.id} data-message-id={message.id} className={`chat-message chat-${message.role}`}>
+            <motion.div
+              key={message.id}
+              data-message-id={message.id}
+              className={`chat-message chat-${message.role}`}
+              {...ARRIVE}
+            >
               {/* Plain text only: an answer can never become markup, and line breaks are kept. */}
               <p style={{ whiteSpace: "pre-line" }}>{message.text}</p>
               {message.ranking && (
@@ -109,12 +124,12 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   Tampilkan di peta
                 </button>
               )}
-            </div>
+            </motion.div>
           ))}
           {busy && (
-            <div className="chat-message chat-assistant chat-typing">
+            <motion.div className="chat-message chat-assistant chat-typing" {...ARRIVE}>
               <p>Sedang menjawab…</p>
-            </div>
+            </motion.div>
           )}
           {/* Follow-up choices belong to the conversation, right after the message they answer. */}
           {last.role === "assistant" && !busy && (
