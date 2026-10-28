@@ -36,3 +36,12 @@ test("a picture reserves its space and loads lazily unless it is the first thing
   expect(img()).toHaveAttribute("loading", "eager");
   expect(img()).toHaveAttribute("fetchpriority", "high");
 });
+
+test("a picture can offer several sizes so a small screen takes the small one", () => {
+  const { container } = render(
+    <ImageSlot src="/a.webp" srcSet="/a-small.webp 800w, /a.webp 3000w" sizes="100vw" fallback={null} />,
+  );
+
+  expect(container.querySelector("img")).toHaveAttribute("srcset", "/a-small.webp 800w, /a.webp 3000w");
+  expect(container.querySelector("img")).toHaveAttribute("sizes", "100vw");
+});

@@ -110,13 +110,15 @@ body {
   outline-offset: 2px;
 }
 
+/* `.app .map` (two classes) so MapLibre's own `.maplibregl-map { position: relative }` can never win,
+   whichever stylesheet loads last: the map is a lazy chunk, and its CSS arrives after this file. */
 .app,
-.map {
+.app .map {
   position: absolute;
   inset: 0;
 }
 
-.map {
+.app .map {
   background: var(--map-bg);
 }
 

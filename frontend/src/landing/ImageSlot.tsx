@@ -7,6 +7,9 @@ type Props = {
   alt?: string;
   /** What to show while no picture is configured. */
   fallback: ReactNode;
+  /** Other sizes of the same picture, so a phone does not download the largest one. */
+  srcSet?: string;
+  sizes?: string;
   /** The picture's size, so the page reserves its space before it loads. */
   width?: number;
   height?: number;
@@ -15,7 +18,7 @@ type Props = {
 };
 
 /** A place in the Landing for a picture. Today every slot shows a photograph. */
-export default function ImageSlot({ src, alt = "", fallback, width, height, priority = false }: Props) {
+export default function ImageSlot({ src, alt = "", fallback, srcSet, sizes, width, height, priority = false }: Props) {
   if (!src) return <>{fallback}</>;
   // React 18 only passes this attribute through in lowercase.
   const hint = priority ? { fetchpriority: "high" } : {};
@@ -23,6 +26,8 @@ export default function ImageSlot({ src, alt = "", fallback, width, height, prio
     <img
       className="image-slot"
       src={src}
+      srcSet={srcSet}
+      sizes={sizes}
       alt={alt}
       width={width}
       height={height}
