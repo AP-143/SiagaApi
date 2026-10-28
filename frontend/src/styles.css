@@ -1576,22 +1576,31 @@ label {
   display: none;
 }
 
+/* The status pills stack under the name card. A warning may be a whole sentence, so it wraps
+   inside the card instead of running off the screen. */
 .status-bar {
   position: fixed;
   top: calc(68px + env(safe-area-inset-top, 0px));
   left: 8px;
   z-index: 2;
-  flex-direction: row;
-  flex-wrap: wrap;
-  max-width: calc(100vw - 72px);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: min(calc(100vw - 72px), 420px);
   pointer-events: none;
 }
 
 .status-bar .pill {
   gap: 6px;
   padding: 4px 10px;
+  max-width: 100%;
   font-size: 12px;
+  white-space: normal;
   pointer-events: auto;
+}
+
+.status-bar .pill-alert {
+  border-radius: 12px;
 }
 
 /* On a phone the bars take the full width, so the chips sit above the bottom bar and the map's

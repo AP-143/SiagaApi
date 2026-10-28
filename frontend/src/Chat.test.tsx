@@ -873,3 +873,14 @@ test("a data answer is not labelled as written by the AI", async () => {
   await within(log).findByText(/3\.295 titik api/);
   expect(screen.queryByText(/Dijawab AI/)).toBeNull();
 });
+
+test("an answer with no source shows no stray digit where the source line would be", async () => {
+  setup();
+  const log = await openChat();
+
+  await ask("Berapa titik api di Kalimantan Tengah?");
+
+  await within(log).findByText(/3\.295 titik api/);
+  expect(within(log).queryByText("0")).toBeNull();
+  expect(log.querySelector(".source-note")).toBeNull();
+});

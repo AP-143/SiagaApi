@@ -102,7 +102,8 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   </blockquote>
                 </>
               )}
-              {(message.sourceNote || message.sourceLinks?.length) && (
+              {/* A boolean, not a number: `0 && ...` would draw a "0" on the screen. */}
+              {Boolean(message.sourceNote || message.sourceLinks?.length) && (
                 <p className="source-note">
                   {message.sourceNote}
                   {message.sourceLinks?.map((href) => (
