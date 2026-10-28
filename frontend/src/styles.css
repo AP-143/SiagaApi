@@ -1,6 +1,8 @@
 /* ---------------------------------------------------------------------------------------------
-   Design tokens. Light is the default; the dark values apply when <html data-theme="dark">.
-   Text colors are chosen for at least 4.5:1 contrast on their card background.
+   Design tokens. Light is the default (paper and ink); the dark values ("night ink", a deep
+   brown-plum) apply when <html data-theme="dark">. Text colors are chosen for at least 4.5:1
+   contrast on their card background. Rust belongs to the Landing; the map keeps orange and purple
+   for data only.
    --------------------------------------------------------------------------------------------- */
 :root {
   color-scheme: light;
@@ -12,65 +14,65 @@
   /* The wordmark and the Landing's big headings. Optical size is pinned wherever it is used. */
   --font-wordmark: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
 
-  --panel: #f7f8f9;
-  --card: rgba(247, 248, 249, 0.92);
-  --card-solid: #ffffff;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --border: rgba(15, 23, 42, 0.12);
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.1), 0 8px 20px rgba(15, 23, 42, 0.14);
+  --panel: #f3ebdc;
+  --card: rgba(243, 235, 220, 0.94);
+  --card-solid: #fbf7ee;
+  --text: #43282a;
+  --text-muted: #6a5350;
+  --border: rgba(67, 40, 42, 0.16);
+  --shadow: 0 1px 2px rgba(67, 40, 42, 0.12), 0 8px 22px rgba(67, 40, 42, 0.16);
 
-  --field-bg: #ffffff;
-  --track-off: #cbd5e1;
-  --segment-bg: rgba(15, 23, 42, 0.07);
-  /* The interface itself is smoke-blue ink. Orange and purple are kept for data (a Hotspot, peat), so
+  --field-bg: #fbf7ee;
+  --track-off: #cdbfac;
+  --segment-bg: rgba(67, 40, 42, 0.07);
+  /* The interface itself is ink on paper. Orange and purple are kept for data (a Hotspot, peat), so
      nothing in the chrome competes with the points on the map. */
-  --button-bg: #243441;
-  --button-text: #ffffff;
+  --button-bg: #43282a;
+  --button-text: #f6efe1;
 
-  --accent: #243441;
-  --accent-strong: #243441;
-  --accent-soft: rgba(36, 52, 65, 0.09);
+  --accent: #43282a;
+  --accent-strong: #43282a;
+  --accent-soft: rgba(67, 40, 42, 0.09);
   --ember: #ea580c;
-  --ember-strong: #c2410c; /* ember used for text: 5.2:1 on white */
+  --ember-strong: #b23a08; /* ember used for text: at least 5:1 on the paper panel */
   --ember-soft: rgba(234, 88, 12, 0.12);
   --peat: #a855f7;
   --peat-strong: #7e22ce;
   --peat-soft: rgba(168, 85, 247, 0.14);
 
   --good: #15803d;
-  --warn-bg: #fef3c7;
-  --warn-text: #78350f;
-  --warn-border: #f59e0b;
+  --warn-bg: #f6e3b4;
+  --warn-text: #5c2f0a;
+  --warn-border: #c98a1b;
 
   --focus: #2563eb;
-  --map-bg: #e5e7eb;
+  --map-bg: #e6dcc8;
 
-  --radius-card: 10px;
-  --radius-control: 6px;
+  --radius-card: 6px;
+  --radius-control: 4px;
   --gap: 8px;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --panel: #151c23;
-  --card: rgba(21, 28, 35, 0.92);
-  --card-solid: #1d2630;
-  --text: #f1f5f9;
-  --text-muted: #a9b4c6;
-  --border: rgba(255, 255, 255, 0.14);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.45);
+  --panel: #261a1d;
+  --card: rgba(38, 26, 29, 0.94);
+  --card-solid: #302125;
+  --text: #f1e8d6;
+  --text-muted: #c2b3a2;
+  --border: rgba(236, 227, 209, 0.16);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 22px rgba(0, 0, 0, 0.45);
 
-  --field-bg: #111827;
-  --track-off: #475569;
-  --segment-bg: rgba(255, 255, 255, 0.08);
-  --button-bg: #dbe5ec;
-  --button-text: #0f1a22;
+  --field-bg: #1b1214;
+  --track-off: #5b4a47;
+  --segment-bg: rgba(236, 227, 209, 0.08);
+  --button-bg: #ece3d1;
+  --button-text: #2a191c;
 
-  --accent: #dbe5ec;
-  --accent-strong: #dbe5ec;
-  --accent-soft: rgba(219, 229, 236, 0.12);
+  --accent: #ece3d1;
+  --accent-strong: #ece3d1;
+  --accent-soft: rgba(236, 227, 209, 0.12);
   --ember: #fb923c;
   --ember-strong: #fdba74;
   --ember-soft: rgba(251, 146, 60, 0.16);
@@ -79,12 +81,12 @@
   --peat-soft: rgba(192, 132, 252, 0.18);
 
   --good: #4ade80;
-  --warn-bg: #451a03;
+  --warn-bg: #3d230a;
   --warn-text: #fde68a;
   --warn-border: #b45309;
 
   --focus: #93c5fd;
-  --map-bg: #0b1220;
+  --map-bg: #1a1214;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -314,9 +316,11 @@ body {
   min-height: 48px;
   padding: 0 14px;
   font: inherit;
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
+  font-family: var(--font-wordmark);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
+  font-size: 18px;
+  font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--text);
   text-align: left;
@@ -428,7 +432,7 @@ body {
 .segment span {
   display: grid;
   place-items: center;
-  min-height: 40px;
+  min-height: 44px;
   font-size: 15px;
   font-weight: 500;
   color: var(--text-muted);
@@ -559,9 +563,11 @@ body {
   min-height: 44px;
   padding: 0 14px;
   font: inherit;
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
+  font-family: var(--font-wordmark);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
+  font-size: 18px;
+  font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--text);
   text-align: left;
@@ -750,9 +756,11 @@ body {
 
 .regency-panel .total strong {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-wordmark);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
   font-size: 38px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
   line-height: 1.2;
   color: var(--text);
@@ -974,7 +982,7 @@ body {
 }
 
 .chip-button {
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 12px;
   font: inherit;
   font-size: 14px;
@@ -1083,8 +1091,8 @@ body {
 }
 
 .maplibregl-popup-close-button {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   font-size: 20px;
   color: var(--text-muted);
   border-radius: 0 14px 0 10px;
@@ -1319,4 +1327,12 @@ body {
   margin: 0;
   padding: 24px;
   color: var(--text-muted);
+}
+
+/* MapLibre's own zoom buttons are 29px; make them thumb-sized on touch screens and phones. */
+@media (pointer: coarse), (max-width: 640px) {
+  .maplibregl-ctrl-group button {
+    width: 44px;
+    height: 44px;
+  }
 }
