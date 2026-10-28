@@ -7,7 +7,7 @@ import type { LayerData } from "../layers";
 import { satelliteTileUrl } from "../satellite";
 import { LAYER_NAMES, type MapViewState } from "../view";
 import { basemapPaint } from "./basemap";
-import { FrameIcon } from "../icons";
+import { FrameIcon, MinusIcon, PlusIcon } from "../icons";
 import { FRAME_PADDING, KALIMANTAN_BOUNDS } from "./kalimantan";
 import { OVERLAY_LAYERS, overlayLayerSpecs } from "./overlays";
 import { buildHotspotPopup } from "./popup";
@@ -121,7 +121,6 @@ export default function MapView({ hotspots, view, layerData, satelliteDate }: Pr
       attributionControl: false,
     });
     mapRef.current = map;
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
     map.on("load", () => {
       // The container may not have had its final size when the map was built, so frame again now.
@@ -223,15 +222,23 @@ export default function MapView({ hotspots, view, layerData, satelliteDate }: Pr
   return (
     <>
       <div ref={containerRef} className="map" aria-label="Peta Kalimantan" />
-      <button
-        type="button"
-        className="map-recenter"
-        aria-label="Tampilkan seluruh Kalimantan"
-        title="Tampilkan seluruh Kalimantan"
-        onClick={() => mapRef.current && frameKalimantan(mapRef.current, true)}
-      >
-        <FrameIcon />
-      </button>
+      {/* One group of three buttons of the same size, drawn by us so they are always the same distance apart. */}
+      <div className="map-controls" role="group" aria-label="Kontrol peta">
+        <button type="button" aria-label="Perbesar" title="Perbesar" onClick={() => mapRef.current?.zoomIn()}>
+          <PlusIcon />
+        </button>
+        <button type="button" aria-label="Perkecil" title="Perkecil" onClick={() => mapRef.current?.zoomOut()}>
+          <MinusIcon />
+        </button>
+        <button
+          type="button"
+          aria-label="Tampilkan seluruh Kalimantan"
+          title="Tampilkan seluruh Kalimantan"
+          onClick={() => mapRef.current && frameKalimantan(mapRef.current, true)}
+        >
+          <FrameIcon />
+        </button>
+      </div>
     </>
   );
 }

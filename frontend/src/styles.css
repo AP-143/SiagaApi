@@ -1095,26 +1095,8 @@ body {
   text-align: right;
 }
 
-.app .maplibregl-ctrl-group {
-  overflow: hidden;
-  background: var(--card-solid);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  box-shadow: var(--shadow);
-}
 
-.app .maplibregl-ctrl-group button {
-  width: 40px;
-  height: 40px;
-}
 
-.app .maplibregl-ctrl-group button + button {
-  border-top: 1px solid var(--border);
-}
-
-.app .maplibregl-ctrl-icon {
-  filter: invert(1);
-}
 
 /* ---- Phones: the filters stay a small card on top and the rest becomes a bottom sheet ------- */
 
@@ -1240,11 +1222,48 @@ body {
   color: var(--text-muted);
 }
 
-/* MapLibre's own zoom buttons are 29px; make them thumb-sized on touch screens and phones. */
-@media (pointer: coarse), (max-width: 640px) {
-  .app .maplibregl-ctrl-group button {
-    width: 44px;
-    height: 44px;
+/* ---- Map controls: zoom in, zoom out, show all --------------------------------------------- */
+
+/* One column of three identical buttons in one frame; the dividers are the only thing between them. */
+.map-controls {
+  position: absolute;
+  z-index: 3;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(10px + env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow);
+}
+
+.map-controls button {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.map-controls button + button {
+  border-top: 1px solid var(--border);
+}
+
+.map-controls button:hover {
+  background: var(--segment-bg);
+}
+
+@media (pointer: fine) and (min-width: 641px) {
+  .map-controls button {
+    width: 40px;
+    height: 40px;
   }
 }
 
@@ -1284,48 +1303,6 @@ label {
   background-image: var(--grain-image-paper);
 }
 
-
-/* ---- Recentre button ------------------------------------------------------------------------ */
-
-/* The third button of the zoom group: it sits flush under + and - and shares their divider, so all
-   three are the same size and the same distance apart. */
-.app .maplibregl-ctrl-top-right .maplibregl-ctrl-group {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.map-recenter {
-  position: absolute;
-  z-index: 3;
-  /* the group starts 10px down and is two 44px buttons plus its two borders, 90px in all */
-  top: calc(100px + env(safe-area-inset-top, 0px));
-  right: calc(10px + env(safe-area-inset-right, 0px));
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  color: var(--text);
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-top: 0; /* the group's own bottom edge is the divider */
-  border-radius: 0 0 var(--radius-control) var(--radius-control);
-  box-shadow: var(--shadow);
-  cursor: pointer;
-}
-
-.map-recenter:hover {
-  background: var(--card-solid);
-}
-
-@media (pointer: fine) and (min-width: 641px) {
-  /* the zoom buttons are 40px here, so the group is 82px tall */
-  .map-recenter {
-    top: calc(92px + env(safe-area-inset-top, 0px));
-    width: 40px;
-    height: 40px;
-  }
-}
 
 /* ---------------------------------------------------------------------------------------------
    The bar layout, at every width. A name card on top, a bar of five icons at the bottom, and a panel
@@ -1611,13 +1588,8 @@ label {
     bottom: var(--sheet-bottom);
   }
 
-  .app .maplibregl-ctrl-top-right {
+  .map-controls {
     top: calc(68px + env(safe-area-inset-top, 0px));
-  }
-
-  /* the zoom group starts at 78px (68 + its 10px margin) and is 90px tall */
-  .map-recenter {
-    top: calc(168px + env(safe-area-inset-top, 0px));
   }
 }
 
@@ -1658,5 +1630,68 @@ label {
 @media (max-width: 640px) {
   .chat-notes .chat-note {
     display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Website (wider than a phone): the five icon cells are a vertical rail on the left edge instead of a
+   bar along the bottom, and a panel opens as a sheet beside the rail. A phone keeps the bottom bar.
+   --------------------------------------------------------------------------------------------- */
+@media (min-width: 641px) {
+  .app {
+    --rail-w: 88px;
+    --rail-cell: 62px;
+    /* centred on the left edge, but never up under the name card and the status pills */
+    --rail-top: max(150px, calc(50vh - var(--rail-cell) * 2.5));
+  }
+
+  .sheet > .filter-panel,
+  .sheet > .layers-panel,
+  .sheet > .regency-panel,
+  .sheet > .legend-panel,
+  .sheet > .chat-panel {
+    left: 8px;
+    bottom: auto;
+    width: var(--rail-w);
+    height: var(--rail-cell);
+    /* stacked: each cell shares the line above it, the first brings its own top edge */
+    border-width: 0 1px 1px 1px;
+    border-radius: 0;
+  }
+
+  .sheet > .filter-panel {
+    top: var(--rail-top);
+    border-top-width: 1px;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+
+  .sheet > .layers-panel {
+    top: calc(var(--rail-top) + var(--rail-cell));
+  }
+
+  .sheet > .regency-panel {
+    top: calc(var(--rail-top) + var(--rail-cell) * 2);
+  }
+
+  .sheet > .legend-panel {
+    top: calc(var(--rail-top) + var(--rail-cell) * 3);
+  }
+
+  .sheet > .chat-panel {
+    top: calc(var(--rail-top) + var(--rail-cell) * 4);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
+  }
+
+  /* The sheet opens to the right of the rail, level with its top. */
+  .sheet > .card .panel-body {
+    left: calc(8px + var(--rail-w) + 8px);
+    top: var(--rail-top);
+    bottom: auto;
+    width: min(380px, calc(100vw - 120px));
+    max-height: calc(100vh - var(--rail-top) - 16px);
+  }
+
+  .chat-panel .panel-body {
+    width: min(420px, calc(100vw - 120px));
   }
 }

@@ -54,3 +54,22 @@ test("the map's own attribution button is off, so the data-sources chip is the o
 
   expect(createdMaps[0].options.attributionControl).toBe(false);
 });
+
+test("zoom in, zoom out and show-all are three buttons of one group", async () => {
+  setup();
+  await waitFor(() => expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1));
+
+  const group = screen.getByRole("group", { name: "Kontrol peta" });
+  const names = Array.from(group.querySelectorAll("button"), (b) => b.getAttribute("aria-label"));
+  expect(names).toEqual(["Perbesar", "Perkecil", "Tampilkan seluruh Kalimantan"]);
+});
+
+test("the zoom buttons zoom the map", async () => {
+  setup();
+  await waitFor(() => expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1));
+
+  await userEvent.click(screen.getByRole("button", { name: "Perbesar" }));
+  await userEvent.click(screen.getByRole("button", { name: "Perkecil" }));
+
+  expect(createdMaps[0].zoomCalls).toEqual(["in", "out"]);
+});

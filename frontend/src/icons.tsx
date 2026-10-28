@@ -52,6 +52,18 @@ export const KeyIcon = () => (
   </Icon>
 );
 
+export const PlusIcon = () => (
+  <Icon size={20}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+);
+
+export const MinusIcon = () => (
+  <Icon size={20}>
+    <path d="M5 12h14" />
+  </Icon>
+);
+
 export const ChevronIcon = () => (
   <Icon size={16}>
     <path d="m6 9 6 6 6-6" />
