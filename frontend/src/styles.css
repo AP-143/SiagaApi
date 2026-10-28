@@ -1627,3 +1627,193 @@ label {
     height: 36px;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------
+   Phone: a slim name bar on top and a bar of four icons at the bottom. A panel opens as a sheet
+   above the bottom bar, one at a time (see panels.ts). The wide-screen bars above are not used.
+   --------------------------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  /* The two stacks dissolve, so each part can sit where the phone layout wants it. */
+  .overlay-top,
+  .overlay-bottom,
+  .overlay-bottom > .sheet {
+    display: contents;
+  }
+
+  .overlay-top.sheet > .brand {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    left: 8px;
+    right: 8px;
+    z-index: 3;
+    height: 52px;
+    padding: 0 6px 0 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow);
+  }
+
+  .brand p {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    letter-spacing: 0.16em;
+  }
+
+  /* The four panels become four equal cells of one bar along the bottom. */
+  .sheet > .filter-panel,
+  .sheet > .layers-panel,
+  .sheet > .regency-panel,
+  .sheet > .chat-panel {
+    position: fixed;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    z-index: 3;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    box-sizing: border-box;
+    width: calc((100vw - 16px) / 4);
+    height: 56px;
+    min-height: 0;
+    overflow: visible;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .sheet > .filter-panel {
+    left: 8px;
+    border-radius: var(--radius-card) 0 0 var(--radius-card);
+  }
+
+  .sheet > .layers-panel {
+    left: calc(8px + (100vw - 16px) / 4);
+    border-left-width: 0;
+    border-radius: 0;
+  }
+
+  .sheet > .regency-panel {
+    left: calc(8px + (100vw - 16px) / 2);
+    border-left-width: 0;
+    border-radius: 0;
+  }
+
+  .sheet > .chat-panel {
+    left: calc(8px + (100vw - 16px) * 3 / 4);
+    border-left-width: 0;
+    border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  }
+
+  .filter-panel:has(.panel-body),
+  .layers-panel:has(.panel-body),
+  .regency-panel:has(.panel-body),
+  .chat-panel:has(.panel-body) {
+    min-height: 0;
+  }
+
+  /* An icon over a small label, as a bottom bar should be. */
+  .sheet > .card .panel-toggle {
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
+  .sheet > .card .panel-toggle[aria-expanded="true"] {
+    background: var(--accent-soft);
+  }
+
+  .sheet > .card .panel-toggle .chevron {
+    display: none;
+  }
+
+  .sheet > .card .panel-toggle svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* The panel's body is a sheet that rises from the bottom bar. */
+  .sheet > .card .panel-body {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    z-index: 4;
+    max-height: min(62vh, 520px);
+    padding: 12px 14px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow);
+  }
+
+  .chat-panel .panel-body {
+    height: min(62vh, 520px);
+  }
+
+  .chat-log {
+    max-height: none;
+  }
+
+  /* Small things sit just above the bottom bar, and step aside while a sheet is open. */
+  .legend {
+    position: fixed;
+    left: 8px;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+    max-width: calc(100vw - 16px - min(50vw, 210px) - 8px);
+  }
+
+  .credits {
+    position: fixed;
+    right: 8px;
+    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+    width: min(50vw, 210px);
+    font-size: 10px;
+  }
+
+  .app:has(.panel-body) .legend,
+  .app:has(.panel-body) .credits {
+    display: none;
+  }
+
+  .status-bar {
+    position: fixed;
+    top: calc(68px + env(safe-area-inset-top, 0px));
+    left: 8px;
+    right: 8px;
+    z-index: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    pointer-events: none;
+  }
+
+  .status-bar .pill {
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    pointer-events: auto;
+  }
+
+  /* MapLibre's controls clear the name bar above and the icon bar below. */
+  .app .maplibregl-ctrl-top-right {
+    top: calc(68px + env(safe-area-inset-top, 0px));
+  }
+
+  .app .maplibregl-ctrl-bottom-right {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .map-recenter {
+    top: calc(68px + 98px + env(safe-area-inset-top, 0px));
+  }
+}
