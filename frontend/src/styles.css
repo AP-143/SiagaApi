@@ -1593,3 +1593,37 @@ label {
   pointer-events: none;
   background: rgba(236, 227, 209, 0.3);
 }
+
+/* ---- Recentre button ------------------------------------------------------------------------ */
+
+/* Sits under MapLibre's zoom buttons (top right), as one more control of the same group. */
+.map-recenter {
+  position: absolute;
+  z-index: 3;
+  /* below the zoom buttons, which are 44px each on touch screens */
+  top: calc(10px + 98px + env(safe-area-inset-top, 0px));
+  right: calc(10px + env(safe-area-inset-right, 0px));
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.map-recenter:hover {
+  background: var(--card-solid);
+}
+
+@media (pointer: fine) and (min-width: 641px) {
+  .map-recenter {
+    top: calc(10px + 66px + env(safe-area-inset-top, 0px));
+    width: 36px;
+    height: 36px;
+  }
+}

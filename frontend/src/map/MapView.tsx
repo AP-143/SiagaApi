@@ -8,7 +8,8 @@ import { satelliteTileUrl } from "../satellite";
 import type { Theme } from "../theme";
 import { LAYER_NAMES, type MapViewState } from "../view";
 import { basemapPaint } from "./basemap";
-import { KALIMANTAN_BOUNDS } from "./kalimantan";
+import { FrameIcon } from "../icons";
+import { FRAME_PADDING, KALIMANTAN_BOUNDS } from "./kalimantan";
 import { OVERLAY_LAYERS, boundaryLineColor, overlayLayerSpecs } from "./overlays";
 import { buildHotspotPopup } from "./popup";
 
@@ -85,6 +86,11 @@ function basemapStyle(theme: Theme, view: MapViewState, satelliteDate: string) {
   };
 }
 
+/** Fit the map to Kalimantan with room for the bars around it. */
+function frameKalimantan(map: maplibregl.Map, animate: boolean) {
+  map.fitBounds(KALIMANTAN_BOUNDS, { padding: FRAME_PADDING, animate, duration: 700 });
+}
+
 function toCollection(hotspots: Hotspot[]): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: hotspots };
 }
@@ -118,6 +124,9 @@ export default function MapView({ hotspots, theme, view, layerData, satelliteDat
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
     map.on("load", () => {
+      // The container may not have had its final size when the map was built, so frame again now.
+      map.resize();
+      frameKalimantan(map, false);
       const current = latest.current;
       // Boundary and peatland layers go in first, so everything below is drawn under the Hotspots.
       for (const name of LAYER_NAMES) {
@@ -234,5 +243,18 @@ export default function MapView({ hotspots, theme, view, layerData, satelliteDat
     else map.once("load", apply);
   }, [theme]);
 
-  return <div ref={containerRef} className="map" aria-label="Peta Kalimantan" />;
+  return (
+    <>
+      <div ref={containerRef} className="map" aria-label="Peta Kalimantan" />
+      <button
+        type="button"
+        className="map-recenter"
+        aria-label="Tampilkan seluruh Kalimantan"
+        title="Tampilkan seluruh Kalimantan"
+        onClick={() => mapRef.current && frameKalimantan(mapRef.current, true)}
+      >
+        <FrameIcon />
+      </button>
+    </>
+  );
 }
