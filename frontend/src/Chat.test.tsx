@@ -884,3 +884,42 @@ test("an answer with no source shows no stray digit where the source line would 
   expect(within(log).queryByText("0")).toBeNull();
   expect(log.querySelector(".source-note")).toBeNull();
 });
+
+test("a ranking that can be shown on the map has no stray digit before its button", async () => {
+  setup(() =>
+    json({
+      kind: "ranking",
+      answer: "Peringkat 5 teratas.\n1. Seruyan: 1.027 titik api\nData terakhir diperbarui 29 Okt 2026.",
+      data: {
+        ranking: [{ name: "Seruyan", count: 1027 }],
+        area: REGION_AREA,
+        window: "24h",
+        peat_only: false,
+        include_low: false,
+      },
+    }),
+  );
+  const log = await openChat();
+
+  await ask("kabupaten mana paling banyak");
+
+  expect(await within(log).findByRole("button", { name: "Tampilkan di peta" })).toBeInTheDocument();
+  expect(within(log).queryByText("0")).toBeNull();
+  // The button is the last thing in the answer: nothing but whitespace may sit before it.
+  const button = within(log).getByRole("button", { name: "Tampilkan di peta" });
+  expect(button.previousSibling?.textContent ?? "").not.toMatch(/^\s*0\s*$/);
+});
+
+test("the send button is a small icon with the name 'Kirim', and it is disabled until there is a question", async () => {
+  setup();
+  await openChat();
+  const send = screen.getByRole("button", { name: "Kirim" });
+
+  expect(send.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  expect(send).toHaveTextContent("");
+  expect(send).toBeDisabled();
+
+  await userEvent.type(screen.getByRole("textbox", { name: "Pertanyaan" }), "halo");
+
+  expect(send).toBeEnabled();
+});

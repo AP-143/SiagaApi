@@ -37,6 +37,13 @@ export const InfoIcon = () => (
   </Icon>
 );
 
+/** An arrow pointing up and to the right: send. */
+export const SendIcon = () => (
+  <Icon size={18}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </Icon>
+);
+
 export const ChevronIcon = () => (
   <Icon size={16}>
     <path d="m6 9 6 6 6-6" />

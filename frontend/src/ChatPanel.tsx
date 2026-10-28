@@ -4,7 +4,7 @@ import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 import { useChat } from "./chat";
 import Collapsible from "./Collapsible";
 import type { Filters } from "./filters";
-import { ChatIcon } from "./icons";
+import { ChatIcon, SendIcon } from "./icons";
 import MotionFeatures from "./MotionFeatures";
 
 const MAX_LENGTH = 500; // what the server accepts
@@ -174,19 +174,20 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={onKeyDown}
           />
-          <button type="submit" className="send-button" disabled={!canSend}>
-            Kirim
+          <button type="submit" className="send-button" aria-label="Kirim" title="Kirim" disabled={!canSend}>
+            <SendIcon />
           </button>
         </form>
 
-        <p className="chat-note">
-          Titik api adalah deteksi satelit, belum tentu kebakaran.
-        </p>
-        {aiOn && (
-          <p className="chat-privacy">
-            Pertanyaan diproses layanan AI pihak ketiga. Jangan menulis data pribadi.
-          </p>
-        )}
+        {/* Both notes flow as one small paragraph. */}
+        <div className="chat-notes">
+          <p className="chat-note">Titik api adalah deteksi satelit, belum tentu kebakaran.</p>
+          {aiOn && (
+            <p className="chat-privacy">
+              Pertanyaan diproses layanan AI pihak ketiga. Jangan menulis data pribadi.
+            </p>
+          )}
+        </div>
       </Collapsible>
     </section>
     </MotionFeatures>
