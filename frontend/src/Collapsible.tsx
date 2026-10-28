@@ -1,7 +1,8 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 
 import { ChevronIcon } from "./icons";
+import MotionFeatures from "./MotionFeatures";
 
 type Props = {
   /** The button text; it names the panel for screen readers too. */
@@ -31,9 +32,10 @@ export default function Collapsible({ label, icon, open, onToggle, children }: P
       {reduced ? (
         open && <div className="panel-body">{children}</div>
       ) : (
+        <MotionFeatures>
         <AnimatePresence initial={false}>
           {open && (
-            <motion.div
+            <m.div
               key="body"
               className="panel-body"
               initial={CLOSED}
@@ -42,9 +44,10 @@ export default function Collapsible({ label, icon, open, onToggle, children }: P
               transition={{ duration: 0.22, ease: [0.2, 0.7, 0.2, 1] }}
             >
               {children}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
+        </MotionFeatures>
       )}
     </>
   );

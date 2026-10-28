@@ -1,10 +1,11 @@
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { m, useInView, useReducedMotion } from "motion/react";
 import { Fragment, useRef } from "react";
 
 import LogoMark from "../LogoMark";
 import ImageSlot from "./ImageSlot";
 import { LANDING_IMAGES } from "./images";
 import SplitText from "./SplitText";
+import MotionFeatures from "../MotionFeatures";
 
 type Piece = { text: string } | { pill: "satellite" | "fire" };
 
@@ -31,21 +32,21 @@ function Pill({ kind, playing, delay }: { kind: "satellite" | "fire"; playing: b
   }
   return (
     // The pill springs in with an overshoot while its photograph settles from a zoom.
-    <motion.span
+    <m.span
       className="statement-pill"
       initial={{ scale: 0 }}
       animate={{ scale: playing ? 1 : 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 11, delay }}
     >
-      <motion.span
+      <m.span
         className="statement-pill-photo"
         initial={{ scale: 1.5 }}
         animate={{ scale: playing ? 1 : 1.5 }}
         transition={{ duration: 1.1, ease: EASE, delay }}
       >
         <ImageSlot src={src} fallback={null} />
-      </motion.span>
-    </motion.span>
+      </m.span>
+    </m.span>
   );
 }
 
@@ -82,6 +83,7 @@ export default function Statement() {
   const emblemDelay = letters * LETTER_GAP + 0.2;
 
   return (
+    <MotionFeatures>
     <section ref={ref} className="statement" aria-labelledby="statement-heading">
       <p className="landing-label">Satelit dan bumi</p>
       <h2 id="statement-heading" className="landing-display statement-text">
@@ -93,7 +95,7 @@ export default function Statement() {
           <LogoMark size={66} />
         </span>
       ) : (
-        <motion.span
+        <m.span
           className="statement-emblem"
           aria-hidden="true"
           initial={{ rotate: -90, scale: 0.6, opacity: 0 }}
@@ -101,8 +103,9 @@ export default function Statement() {
           transition={{ duration: 1.2, ease: EASE, delay: emblemDelay }}
         >
           <LogoMark size={66} />
-        </motion.span>
+        </m.span>
       )}
     </section>
+    </MotionFeatures>
   );
 }

@@ -1,5 +1,7 @@
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { m, useInView, useReducedMotion } from "motion/react";
 import { useRef, type ReactNode } from "react";
+
+import MotionFeatures from "../MotionFeatures";
 
 /** Where a property rests once it has arrived. */
 const AT_REST: Record<string, number> = { opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 };
@@ -33,12 +35,13 @@ export default function Reveal({
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const scrolledTo = useInView(ref, { once: true, amount: 0.35 });
-  const Element = as === "header" ? motion.header : motion.div;
+  const Element = as === "header" ? m.header : m.div;
 
   if (reduced) return <Element className={className}>{children}</Element>;
 
   const arrived = Object.fromEntries(Object.keys(from).map((key) => [key, AT_REST[key]]));
   return (
+    <MotionFeatures>
     <Element
       ref={ref as never}
       className={className}
@@ -48,5 +51,6 @@ export default function Reveal({
     >
       {children}
     </Element>
+    </MotionFeatures>
   );
 }

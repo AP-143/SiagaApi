@@ -11,7 +11,8 @@ cp .env.example .env     # then put your FIRMS MAP_KEY in .env
 docker compose up
 ```
 
-- Web app: http://localhost:5173
+- Landing: http://localhost:5173/ (a scrolling editorial page that explains what a Hotspot is; "Buka peta" leads on)
+- Map: http://localhost:5173/peta (a link with filters, such as `/?province=ID62`, also opens the map)
 - API: http://localhost:8000 (health check at `/health`)
 - `ingestor` fetches Hotspots from NASA FIRMS every 30 minutes
 

@@ -10,7 +10,7 @@ export const PHOTO_CREDITS = [
   {
     subject: "Asap dan titik api di Borneo, 2006",
     author: "NASA MODIS Rapid Response Team",
-    license: "Public domain",
+    license: "Domain publik",
     licenseUrl: null,
     source: "https://commons.wikimedia.org/wiki/File:Borneo_fires_October_2006.jpg",
   },

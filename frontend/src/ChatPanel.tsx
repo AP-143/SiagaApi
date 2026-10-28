@@ -1,10 +1,11 @@
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { useChat } from "./chat";
 import Collapsible from "./Collapsible";
 import type { Filters } from "./filters";
 import { ChatIcon } from "./icons";
+import MotionFeatures from "./MotionFeatures";
 
 const MAX_LENGTH = 500; // what the server accepts
 
@@ -65,11 +66,12 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
   const last = messages[messages.length - 1];
 
   return (
+    <MotionFeatures>
     <section className="card chat-panel">
       <Collapsible label="Tanya" icon={<ChatIcon />} open={open} onToggle={onToggle}>
         <div className="chat-log" role="log" aria-label="Percakapan" aria-live="polite" ref={logRef}>
           {messages.map((message) => (
-            <motion.div
+            <m.div
               key={message.id}
               data-message-id={message.id}
               className={`chat-message chat-${message.role}`}
@@ -124,12 +126,12 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   Tampilkan di peta
                 </button>
               )}
-            </motion.div>
+            </m.div>
           ))}
           {busy && (
-            <motion.div className="chat-message chat-assistant chat-typing" {...ARRIVE}>
+            <m.div className="chat-message chat-assistant chat-typing" {...ARRIVE}>
               <p>Sedang menjawab…</p>
-            </motion.div>
+            </m.div>
           )}
           {/* Follow-up choices belong to the conversation, right after the message they answer. */}
           {last.role === "assistant" && !busy && (
@@ -186,5 +188,6 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
         )}
       </Collapsible>
     </section>
+    </MotionFeatures>
   );
 }

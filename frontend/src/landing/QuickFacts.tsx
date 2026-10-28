@@ -1,10 +1,11 @@
-import { motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { m, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 
 import ImageSlot from "./ImageSlot";
 import { LANDING_IMAGES } from "./images";
 import Reveal from "./Reveal";
 import SplitText from "./SplitText";
+import MotionFeatures from "../MotionFeatures";
 
 const TITLE_LINES = ["Fakta", "singkat", "tentang", "titik api"];
 const TITLE = "Fakta singkat tentang titik api";
@@ -85,6 +86,7 @@ export default function QuickFacts() {
   );
 
   return (
+    <MotionFeatures>
     <section ref={ref} className="facts" aria-labelledby="facts-heading">
       <div className="facts-column">
         <div className="facts-left">
@@ -109,7 +111,7 @@ export default function QuickFacts() {
             <table className="facts-table">
               <tbody>
                 {FACTS.map(([label, value], i) => (
-                  <motion.tr
+                  <m.tr
                     key={label}
                     initial={reduced ? false : { opacity: 0 }}
                     animate={{ opacity: playing || reduced ? 1 : 0 }}
@@ -117,7 +119,7 @@ export default function QuickFacts() {
                   >
                     <th scope="row">{label}</th>
                     <td>{value}</td>
-                  </motion.tr>
+                  </m.tr>
                 ))}
               </tbody>
             </table>
@@ -125,29 +127,30 @@ export default function QuickFacts() {
         </div>
 
         {/* The portrait wipes up from the bottom while its photograph settles from a zoom. */}
-        <motion.figure
+        <m.figure
           ref={portraitRef as never}
           className="facts-portrait"
           initial={reduced ? false : { clipPath: WIPED }}
           animate={reduced ? undefined : { clipPath: playing ? SHOWN : WIPED }}
           transition={{ duration: 1.2, ease: EASE, delay: 0.3 }}
         >
-          <motion.div className="facts-portrait-drift" style={{ y: reduced ? 0 : drift }}>
+          <m.div className="facts-portrait-drift" style={{ y: reduced ? 0 : drift }}>
             {reduced ? (
               photograph
             ) : (
-              <motion.div
+              <m.div
                 className="facts-portrait-settle"
                 initial={{ scale: 1.25 }}
                 animate={{ scale: playing ? 1 : 1.25 }}
                 transition={{ duration: 1.4, ease: EASE, delay: 0.3 }}
               >
                 {photograph}
-              </motion.div>
+              </m.div>
             )}
-          </motion.div>
-        </motion.figure>
+          </m.div>
+        </m.figure>
       </div>
     </section>
+    </MotionFeatures>
   );
 }

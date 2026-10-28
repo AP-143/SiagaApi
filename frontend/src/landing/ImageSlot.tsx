@@ -17,6 +17,8 @@ type Props = {
 /** A place in the Landing for a picture. Today every slot shows a photograph. */
 export default function ImageSlot({ src, alt = "", fallback, width, height, priority = false }: Props) {
   if (!src) return <>{fallback}</>;
+  // React 18 only passes this attribute through in lowercase.
+  const hint = priority ? { fetchpriority: "high" } : {};
   return (
     <img
       className="image-slot"
@@ -25,8 +27,8 @@ export default function ImageSlot({ src, alt = "", fallback, width, height, prio
       width={width}
       height={height}
       loading={priority ? "eager" : "lazy"}
-      fetchPriority={priority ? "high" : undefined}
       decoding="async"
+      {...hint}
     />
   );
 }

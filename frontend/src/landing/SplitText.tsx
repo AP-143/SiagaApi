@@ -1,5 +1,7 @@
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { m, useInView, useReducedMotion } from "motion/react";
 import { createElement, Fragment, useRef } from "react";
+
+import MotionFeatures from "../MotionFeatures";
 
 type Props = {
   text: string;
@@ -62,7 +64,7 @@ export default function SplitText({
               {letter}
             </span>
           ) : (
-            <motion.span
+            <m.span
               key={index}
               aria-hidden="true"
               className="split-letter"
@@ -71,12 +73,12 @@ export default function SplitText({
               transition={{ duration, ease: [0.2, 0.7, 0.2, 1], delay: wait }}
             >
               {letter}
-            </motion.span>
+            </m.span>
           );
         })}
       </span>
     </Fragment>
   ));
 
-  return createElement(as, { ref, className, "aria-label": text }, words);
+  return <MotionFeatures>{createElement(as, { ref, className, "aria-label": text }, words)}</MotionFeatures>;
 }

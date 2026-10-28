@@ -1,4 +1,4 @@
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { m, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 
 import LogoMark from "../LogoMark";
@@ -6,6 +6,7 @@ import ImageSlot from "./ImageSlot";
 import { LANDING_IMAGES } from "./images";
 import Reveal from "./Reveal";
 import SplitText from "./SplitText";
+import MotionFeatures from "../MotionFeatures";
 
 const PHONE = "(max-width: 760px)";
 
@@ -76,14 +77,15 @@ export default function Hero() {
     : { initial: { scale: 1.06 }, animate: { scale: 1 }, transition: { duration: 2.2, ease: [0.2, 0.7, 0.2, 1] as const } };
 
   return (
+    <MotionFeatures>
     <section className="hero">
       <div className="hero-frame">
-        <motion.div className="hero-stage" style={{ y: drift }}>
-          <motion.div className="hero-layer" style={{ filter: blur, opacity: fade }} {...settle}>
+        <m.div className="hero-stage" style={{ y: drift }}>
+          <m.div className="hero-layer" style={{ filter: blur, opacity: fade }} {...settle}>
             <ImageSlot src={LANDING_IMAGES.heroSky} width={2000} height={1131} priority fallback={null} />
             {/* A soft paper veil keeps the title readable over the clouds. */}
             <div className="hero-veil" aria-hidden="true" />
-          </motion.div>
+          </m.div>
 
           <div className="hero-title">
             <Reveal from={{ opacity: 0, y: -10 }} duration={0.8} delay={0.15}>
@@ -101,10 +103,10 @@ export default function Hero() {
               blur={10}
             />
           </div>
-        </motion.div>
+        </m.div>
       </div>
 
-      <motion.div className="hero-pill-slot" style={{ opacity: pillOpacity }}>
+      <m.div className="hero-pill-slot" style={{ opacity: pillOpacity }}>
         <Reveal from={{ opacity: 0, y: 18 }} delay={1.05}>
           <a className="hero-pill" href="/peta">
             <span className="hero-pill-pin">
@@ -114,9 +116,9 @@ export default function Hero() {
             <ArrowIcon />
           </a>
         </Reveal>
-      </motion.div>
+      </m.div>
 
-      <motion.div
+      <m.div
         className="hero-melt"
         aria-hidden="true"
         style={{ scaleY: meltScale, opacity: melt }}
@@ -137,5 +139,6 @@ export default function Hero() {
         </a>
       </Reveal>
     </section>
+    </MotionFeatures>
   );
 }
