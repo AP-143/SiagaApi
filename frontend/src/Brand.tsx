@@ -12,7 +12,7 @@ export default function Brand({ theme, onToggleTheme }: Props) {
         <LogoMark />
       </span>
       <div className="brand-text">
-        <h1>SiagaApi</h1>
+        <h1 translate="no">SiagaApi</h1>
         <p>Pantau titik api Kalimantan</p>
       </div>
       <button

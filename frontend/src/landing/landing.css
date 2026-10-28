@@ -16,6 +16,7 @@ body:has(.landing) {
 }
 
 .landing {
+  color-scheme: light;
   position: relative;
   min-height: 100svh;
   overflow-x: clip;
@@ -175,9 +176,8 @@ body:has(.landing) {
 /* The paper rises over the photograph as the page is scrolled, so the hero melts into it. */
 .hero-melt {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  transform-origin: bottom;
   z-index: 3;
   pointer-events: none;
   background: linear-gradient(to top, var(--paper) 0%, var(--paper) 38%, transparent 100%);
@@ -241,6 +241,32 @@ body:has(.landing) {
 .hero-nav-link:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 3px;
+  /* A paper halo keeps the ring visible over the dark parts of the photograph. */
+  box-shadow: 0 0 0 6px var(--paper);
+}
+
+.landing a {
+  touch-action: manipulation;
+}
+
+@media (hover: hover) {
+  .hero-pill {
+    transition: background-color 160ms ease;
+  }
+
+  .hero-pill:hover {
+    background: var(--paper-deep);
+  }
+
+  .hero-nav-link:hover,
+  .facts-badge:hover .facts-badge-caption {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .photo-credits a:hover {
+    color: var(--ink);
+  }
 }
 
 @media (max-width: 760px) {
@@ -421,6 +447,7 @@ body:has(.landing) {
 
 .facts-copy {
   margin: 0;
+  text-wrap: pretty;
   font-size: 13.4px;
   line-height: 1.75;
   color: var(--ink-body);

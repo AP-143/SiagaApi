@@ -1337,3 +1337,13 @@ body {
     fill 250ms ease,
     stroke 250ms ease !important;
 }
+
+/* A tap should act at once, without the delay some browsers add while waiting for a double tap. */
+a,
+button,
+select,
+summary,
+[role="radio"],
+label {
+  touch-action: manipulation;
+}

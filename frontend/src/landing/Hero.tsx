@@ -62,7 +62,9 @@ export default function Hero() {
 
   // The stage drifts down at a third of the scroll, so the photograph lags behind the page.
   const drift = useTransform(scrollY, (y) => (reduced ? 0 : y * 0.32));
-  const meltHeight = useTransform(melt, (p) => `${34 + 66 * p}%`);
+  // The gradient grows from 34% to the full height of the hero. Scaling it (from the bottom) gives the
+  // same picture as changing its height, without a layout on every scroll frame.
+  const meltScale = useTransform(melt, (p) => 0.34 + 0.66 * p);
   const pillOpacity = useTransform(melt, (p) => 1 - p);
   // Blur is costly on a phone, so there the photograph only fades.
   const blur = useTransform(melt, (p) => (reduced || phone ? "none" : `blur(${p * 6}px)`));
@@ -117,7 +119,7 @@ export default function Hero() {
       <motion.div
         className="hero-melt"
         aria-hidden="true"
-        style={{ height: meltHeight, opacity: melt }}
+        style={{ scaleY: meltScale, opacity: melt }}
       />
 
       <Reveal as="header" className="hero-nav" from={{ opacity: 0, y: -10 }} delay={0.15}>
@@ -125,7 +127,9 @@ export default function Hero() {
           <LogoMark size={30} />
         </span>
         <div className="hero-nav-brand">
-          <span className="landing-display hero-nav-name">SiagaApi</span>
+          <span className="landing-display hero-nav-name" translate="no">
+            SiagaApi
+          </span>
           <span className="hero-nav-tagline">Pemantau titik api Kalimantan</span>
         </div>
         <a className="hero-nav-link" href="/peta">
