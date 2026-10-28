@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   type Area,
@@ -24,6 +24,7 @@ import RegencyPanel from "./RegencyPanel";
 import { formatSatelliteDate, latestSatelliteDate } from "./satellite";
 import StatusBar, { type FreshnessState } from "./StatusBar";
 import { useDarkTheme } from "./theme";
+import { useStatusHeight } from "./useStatusHeight";
 import { LAYER_INFO, type MapViewState, parseView, viewToParams } from "./view";
 
 // A page left open for hours must keep up with the 30-minute ingestion.
@@ -50,6 +51,8 @@ export default function App() {
   const panels = usePanels();
   useDismissPopovers(Object.values(panels.open).some(Boolean), panels.closeAll);
   useDarkTheme();
+  const page = useRef<HTMLElement>(null);
+  useStatusHeight(page);
   const layers = useLayerData(view.layers);
   // Fixed for the visit, so the imagery and the date shown beside it can never disagree.
   const satelliteDate = useMemo(() => latestSatelliteDate(), []);
@@ -146,7 +149,7 @@ export default function App() {
   }, [refreshTick]);
 
   return (
-    <main className="app">
+    <main className="app" ref={page}>
       <div className="grain" aria-hidden="true" />
       <MapView
         hotspots={hotspots}

@@ -1641,8 +1641,8 @@ label {
   .app {
     --rail-w: 88px;
     --rail-cell: 62px;
-    /* centred on the left edge, but never up under the name card and the status pills */
-    --rail-top: max(150px, calc(50vh - var(--rail-cell) * 2.5));
+    /* just under the status pills, which sit under the name card (68px down) and vary in height */
+    --rail-top: calc(68px + var(--status-h, 28px) + 12px);
   }
 
   .sheet > .filter-panel,
