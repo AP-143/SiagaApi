@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 
 import { isBarViewport, isPhoneViewport } from "./viewport";
 
-export type PanelName = "filter" | "layers" | "summary" | "chat";
+export type PanelName = "filter" | "layers" | "summary" | "legend" | "chat";
 
 type OpenPanels = Record<PanelName, boolean>;
 
-const ALL_CLOSED: OpenPanels = { filter: false, layers: false, summary: false, chat: false };
+const ALL_CLOSED: OpenPanels = { filter: false, layers: false, summary: false, legend: false, chat: false };
 
 /**
  * Which panels are open. In the bar layout (every real browser) panels are sheets above the bottom
@@ -17,7 +17,7 @@ const ALL_CLOSED: OpenPanels = { filter: false, layers: false, summary: false, c
 export function usePanels() {
   const [open, setOpen] = useState<OpenPanels>(() => {
     const startOpen = !isPhoneViewport() && !isBarViewport();
-    return { filter: startOpen, layers: startOpen, summary: startOpen, chat: false };
+    return { filter: startOpen, layers: startOpen, summary: startOpen, legend: startOpen, chat: false };
   });
 
   function toggle(name: PanelName) {

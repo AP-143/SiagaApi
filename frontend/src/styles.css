@@ -534,56 +534,14 @@ body {
   border-top: 1.5px dashed var(--text);
 }
 
-/* The legend is a card of its own. Narrow screens get it folded, in the stack of panels; a wide screen
-   gets it open as a strip along the bottom edge of the map, between the two sheets. */
-.legend {
-  font-size: 14px;
-  color: var(--text-muted);
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow);
-}
-
-.legend-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 14px;
-  font: inherit;
-  font-family: var(--font-wordmark);
-  font-optical-sizing: none;
-  font-variation-settings: "opsz" 11;
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text);
-  text-align: left;
-  background: none;
-  border: 0;
-  border-radius: inherit;
-  cursor: pointer;
-}
-
-.legend-toggle .chevron {
-  display: grid;
-  margin-left: auto;
-  color: var(--text-muted);
-  transition: transform 200ms ease;
-}
-
-.legend-toggle[aria-expanded="true"] .chevron {
-  transform: rotate(180deg);
-}
-
-.legend ul {
+/* The legend's list, inside its sheet. */
+.legend-list {
   display: grid;
   gap: 6px;
   margin: 0;
-  padding: 2px 14px 12px;
+  padding: 0;
+  font-size: 14px;
+  color: var(--text-muted);
   list-style: none;
 }
 
@@ -1186,17 +1144,13 @@ body {
     flex-wrap: wrap;
   }
 
-  /* While the chat is open it gets the room: the legend steps aside (it is back once the chat is
-     closed) and the stack may grow taller than usual. */
+  /* While the chat is open the stack may grow taller than usual. */
   .overlay-bottom:has(.chat-panel .panel-body) {
     /* what is left under the folded sheet at the top (name, Filter, Lapisan) */
     max-height: calc(100vh - 244px);
     max-height: calc(100dvh - 244px);
   }
 
-  .overlay-bottom:has(.chat-panel .panel-body) .legend {
-    display: none;
-  }
 
 
 
@@ -1333,13 +1287,18 @@ label {
 
 /* ---- Recentre button ------------------------------------------------------------------------ */
 
-/* Sits under MapLibre's zoom buttons (top right), as one more control of the same group. */
+/* The third button of the zoom group: it sits flush under + and - and shares their divider, so all
+   three are the same size and the same distance apart. */
+.app .maplibregl-ctrl-top-right .maplibregl-ctrl-group {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 .map-recenter {
   position: absolute;
   z-index: 3;
-  /* below the zoom buttons, which are 44px each on touch screens */
-  /* the zoom group starts 10px down and has two 44px buttons: 10 + 91, then a 10px gap */
-  top: calc(111px + env(safe-area-inset-top, 0px));
+  /* the group starts 10px down and is two 44px buttons plus its two borders, 90px in all */
+  top: calc(100px + env(safe-area-inset-top, 0px));
   right: calc(10px + env(safe-area-inset-right, 0px));
   display: grid;
   place-items: center;
@@ -1349,7 +1308,8 @@ label {
   color: var(--text);
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: var(--radius-control);
+  border-top: 0; /* the group's own bottom edge is the divider */
+  border-radius: 0 0 var(--radius-control) var(--radius-control);
   box-shadow: var(--shadow);
   cursor: pointer;
 }
@@ -1359,23 +1319,23 @@ label {
 }
 
 @media (pointer: fine) and (min-width: 641px) {
-  /* the zoom buttons are 40px here: 10 + 83, then a 10px gap */
+  /* the zoom buttons are 40px here, so the group is 82px tall */
   .map-recenter {
-    top: calc(103px + env(safe-area-inset-top, 0px));
+    top: calc(92px + env(safe-area-inset-top, 0px));
     width: 40px;
     height: 40px;
   }
 }
 
 /* ---------------------------------------------------------------------------------------------
-   The bar layout, at every width. A name card on top, a bar of four icons at the bottom, and a panel
+   The bar layout, at every width. A name card on top, a bar of five icons at the bottom, and a panel
    opens as a sheet above that bar, one at a time (see panels.ts). On a phone the bars run the full
    width; on a bigger screen the bottom bar stays a compact one in the middle.
    --------------------------------------------------------------------------------------------- */
 .app {
-  --bar-w: min(calc(100vw - 16px), 460px);
+  --bar-w: min(calc(100vw - 16px), 540px);
   --bar-left: calc((100vw - var(--bar-w)) / 2);
-  --cell: calc(var(--bar-w) / 4);
+  --cell: calc(var(--bar-w) / 5);
   --bar-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   --sheet-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
 }
@@ -1413,6 +1373,7 @@ label {
 .sheet > .filter-panel,
 .sheet > .layers-panel,
 .sheet > .regency-panel,
+.sheet > .legend-panel,
 .sheet > .chat-panel {
   position: fixed;
   bottom: var(--bar-bottom);
@@ -1447,8 +1408,14 @@ label {
   border-radius: 0;
 }
 
-.sheet > .chat-panel {
+.sheet > .legend-panel {
   left: calc(var(--bar-left) + var(--cell) * 3);
+  border-left-width: 0;
+  border-radius: 0;
+}
+
+.sheet > .chat-panel {
+  left: calc(var(--bar-left) + var(--cell) * 4);
   border-left-width: 0;
   border-radius: 0 var(--radius-card) var(--radius-card) 0;
 }
@@ -1456,6 +1423,7 @@ label {
 .filter-panel:has(.panel-body),
 .layers-panel:has(.panel-body),
 .regency-panel:has(.panel-body),
+.legend-panel:has(.panel-body),
 .chat-panel:has(.panel-body) {
   min-height: 0;
 }
@@ -1516,22 +1484,7 @@ label {
   max-height: none;
 }
 
-/* The legend and the data sources are two small chips beside the bar, and step aside while a sheet
-   or the other chip is open. Either one opens upwards. */
-.legend {
-  position: fixed;
-  left: 8px;
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  z-index: 2;
-  max-width: calc(100vw - 16px);
-}
-
-.legend-toggle {
-  min-height: 40px;
-  padding: 0 10px 0 12px;
-  font-size: 15px;
-}
-
+/* The data sources are a small round button beside the bar, and step aside while a sheet is open. */
 .credits {
   position: fixed;
   right: 8px;
@@ -1606,10 +1559,7 @@ label {
   line-height: 1.5;
 }
 
-.app:has(.panel-body) .legend,
-.app:has(.panel-body) .credits,
-.app:has(.legend ul) .credits-folded,
-.app:has(.credits-folded[open]) .legend {
+.app:has(.panel-body) .credits {
   display: none;
 }
 
@@ -1640,6 +1590,14 @@ label {
   border-radius: 12px;
 }
 
+/* Five labels share the bar, so on a narrow phone they get a little smaller. */
+@media (max-width: 420px) {
+  .sheet > .card .panel-toggle {
+    font-size: 9px;
+    letter-spacing: 0.04em;
+  }
+}
+
 /* On a phone the bars take the full width, so the chips sit above the bottom bar and the map's
    controls clear the name card. */
 @media (max-width: 640px) {
@@ -1647,7 +1605,6 @@ label {
     width: calc(100vw - 16px);
   }
 
-  .legend,
   .credits {
     bottom: var(--sheet-bottom);
   }
@@ -1656,9 +1613,9 @@ label {
     top: calc(68px + env(safe-area-inset-top, 0px));
   }
 
-  /* the zoom group starts at 78px (68 + its 10px margin), is 91px tall, then a 10px gap */
+  /* the zoom group starts at 78px (68 + its 10px margin) and is 90px tall */
   .map-recenter {
-    top: calc(179px + env(safe-area-inset-top, 0px));
+    top: calc(168px + env(safe-area-inset-top, 0px));
   }
 }
 

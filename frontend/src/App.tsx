@@ -189,6 +189,7 @@ export default function App() {
             open={panels.open.summary}
             onToggle={() => panels.toggle("summary")}
           />
+          <Legend view={view} open={panels.open.legend} onToggle={() => panels.toggle("legend")} />
           <ChatPanel
             open={panels.open.chat}
             onToggle={() => panels.toggle("chat")}
@@ -198,8 +199,7 @@ export default function App() {
             }}
           />
         </div>
-        {/* After the bar in the page, so Tab goes through the bar first; they are drawn in the corners. */}
-        <Legend view={view} />
+        {/* After the bar in the page; drawn in the corner. */}
         <Credits />
       </div>
     </main>

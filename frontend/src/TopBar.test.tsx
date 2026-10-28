@@ -107,7 +107,7 @@ test("the legend starts as just its title", async () => {
 
 test("Tab moves through the bar in the order the buttons are drawn", async () => {
   setup();
-  const names = ["Filter", "Lapisan", "Ringkasan", "Tanya"];
+  const names = ["Filter", "Lapisan", "Ringkasan", "Keterangan", "Tanya"];
   const brand = screen.getByRole("link", { name: /kembali ke beranda/i });
   brand.focus();
 

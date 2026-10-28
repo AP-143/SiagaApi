@@ -44,6 +44,14 @@ export const SendIcon = () => (
   </Icon>
 );
 
+/** Two overlapping dots, like the Hotspot marks a map key explains. */
+export const KeyIcon = () => (
+  <Icon>
+    <circle cx="9" cy="9" r="4.5" />
+    <circle cx="15.5" cy="15.5" r="4.5" />
+  </Icon>
+);
+
 export const ChevronIcon = () => (
   <Icon size={16}>
     <path d="m6 9 6 6 6-6" />
