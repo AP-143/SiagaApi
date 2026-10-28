@@ -275,3 +275,57 @@ body:has(.landing) {
     letter-spacing: 0.18em;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------
+   Statement
+   --------------------------------------------------------------------------------------------- */
+.statement {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(22px, 4.5svh, 48px);
+  padding: 12svh clamp(16px, 4vw, 56px);
+  text-align: center;
+  background: var(--paper);
+}
+
+.statement-text {
+  font-size: clamp(40px, 7.2vw, 132px);
+  line-height: 1.06;
+  color: var(--ink);
+}
+
+.statement-line {
+  display: block;
+}
+
+/* A round photograph set into the line, about as tall as the capitals. */
+.statement-pill {
+  display: inline-block;
+  width: 0.86em;
+  height: 0.86em;
+  margin: 0 0.06em;
+  vertical-align: -0.06em;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--paper-deep);
+}
+
+.statement-pill-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.statement-emblem {
+  display: inline-flex;
+  color: var(--rust);
+}
+
+@media (max-width: 760px) {
+  .statement-text {
+    font-size: 8.6vw;
+  }
+}

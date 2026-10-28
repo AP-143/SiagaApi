@@ -7,6 +7,8 @@ type Props = {
   className?: string;
   /** When the letters play: as soon as the page loads, or once the text is scrolled to. */
   on?: "view" | "load";
+  /** Plays the letters when true, whatever `on` says; for text that is timed by something around it. */
+  playing?: boolean;
   /** Seconds between one letter and the next, in reading order. */
   stagger?: number;
   /** Seconds to wait before the first letter. */
@@ -31,6 +33,7 @@ export default function SplitText({
   as = "span",
   className,
   on = "view",
+  playing: playingOverride,
   stagger = 0.026,
   delay = 0,
   rise = 0.55,
@@ -41,7 +44,7 @@ export default function SplitText({
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const scrolledTo = useInView(ref, { once: true, amount: 0.35 });
-  const playing = on === "load" || scrolledTo;
+  const playing = playingOverride ?? (on === "load" || scrolledTo);
 
   const hidden = { opacity: 0, y: `${rise}em`, rotate: tilt, filter: `blur(${blur}px)` };
   const shown = { opacity: 1, y: 0, rotate: 0, filter: "blur(0px)" };
