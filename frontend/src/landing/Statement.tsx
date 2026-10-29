@@ -11,12 +11,12 @@ type Piece = { text: string } | { pill: "satellite" | "fire" };
 
 // Each line of the statement. A pill sits in the gap where a round photograph is wanted.
 const LINES: Piece[][] = [
-  [{ text: "Satelit" }, { pill: "satellite" }, { text: "memantau" }],
-  [{ text: "titik panas" }, { pill: "fire" }, { text: "di" }],
-  [{ text: "Kalimantan" }],
+  [{ text: "Di tengah malam" }, { pill: "fire" }],
+  [{ text: "satelit" }, { pill: "satellite" }, { text: "tetap" }],
+  [{ text: "membaca bara" }],
 ];
 
-const SENTENCE = "Satelit memantau titik panas di Kalimantan";
+const SENTENCE = "Di tengah malam, satelit tetap membaca bara";
 const LETTER_GAP = 0.026;
 const EASE = [0.2, 0.7, 0.2, 1] as const;
 
@@ -85,7 +85,7 @@ export default function Statement() {
   return (
     <MotionFeatures>
     <section ref={ref} className="statement" aria-labelledby="statement-heading">
-      <p className="landing-label">Satelit dan bumi</p>
+      <p className="landing-label">Mata dari orbit</p>
       <h2 id="statement-heading" className="landing-display statement-text">
         <span className="sr-only">{SENTENCE}</span>
         <span aria-hidden="true">{lines}</span>

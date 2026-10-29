@@ -80,7 +80,7 @@ export default function QuickFacts() {
   const photograph = (
     <ImageSlot
       src={LANDING_IMAGES.portrait}
-      alt="Hutan rawa gambut di Kalimantan, batang-batang pohon tinggi berdiri di air yang tenang"
+      alt="Hutan terbakar di malam hari, pohon-pohon berdiri hitam di bawah asap yang menyala jingga"
       fallback={null}
     />
   );

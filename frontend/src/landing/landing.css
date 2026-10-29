@@ -120,7 +120,7 @@ body:has(.landing) {
 .hero-veil {
   position: absolute;
   inset: 0 0 45% 0;
-  background: linear-gradient(to bottom, rgba(236, 227, 209, 0.62), rgba(236, 227, 209, 0));
+  background: linear-gradient(to bottom, rgba(12, 7, 7, 0.5), rgba(12, 7, 7, 0));
   pointer-events: none;
 }
 
@@ -130,12 +130,12 @@ body:has(.landing) {
   left: 0;
   right: 0;
   text-align: center;
-  color: var(--ink);
+  color: var(--paper);
 }
 
 .hero-eyebrow {
   margin: 0 0 0.9cqw;
-  color: var(--ink);
+  color: var(--paper);
   font-size: max(10.5px, 0.66cqw);
 }
 
@@ -200,7 +200,7 @@ body:has(.landing) {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 22px clamp(16px, 3vw, 40px);
-  color: var(--ink);
+  color: var(--paper);
 }
 
 .hero-nav-mark {
@@ -240,7 +240,7 @@ body:has(.landing) {
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink);
+  color: var(--paper);
   text-decoration: none;
 }
 

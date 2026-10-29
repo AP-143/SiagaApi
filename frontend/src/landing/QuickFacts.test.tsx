@@ -56,7 +56,7 @@ test("the portrait photograph is described", () => {
   setReducedMotion(false);
   render(<QuickFacts />);
 
-  expect(screen.getByRole("img", { name: /hutan rawa gambut/i })).toBeInTheDocument();
+  expect(screen.getByRole("img", { name: /hutan terbakar di malam hari/i })).toBeInTheDocument();
 });
 
 test("the title and the table wait out of sight until the section is scrolled to", async () => {

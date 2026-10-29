@@ -14,7 +14,7 @@ test("the statement reads as one sentence", () => {
   render(<Statement />);
 
   expect(
-    screen.getByRole("heading", { level: 2, name: "Satelit memantau titik panas di Kalimantan" }),
+    screen.getByRole("heading", { level: 2, name: "Di tengah malam, satelit tetap membaca bara" }),
   ).toBeInTheDocument();
 });
 
@@ -22,7 +22,7 @@ test("a rust label introduces it", () => {
   setReducedMotion(false);
   render(<Statement />);
 
-  expect(screen.getByText(/satelit dan bumi/i)).toBeInTheDocument();
+  expect(screen.getByText(/mata dari orbit/i)).toBeInTheDocument();
 });
 
 test("the round pictures and the emblem are decoration, hidden from assistive technology", () => {

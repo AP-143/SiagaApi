@@ -83,15 +83,15 @@ export default function Hero() {
         <m.div className="hero-stage" style={{ y: drift }}>
           <m.div className="hero-layer" style={{ filter: blur, opacity: fade }} {...settle}>
             <ImageSlot
-              src={LANDING_IMAGES.heroSky}
-              srcSet={LANDING_IMAGES.heroSkySet}
+              src={LANDING_IMAGES.heroImage}
+              srcSet={LANDING_IMAGES.heroImageSet}
               sizes="100vw"
               width={3060}
               height={1730}
               priority
               fallback={null}
             />
-            {/* A soft paper veil keeps the title readable over the clouds. */}
+            {/* A soft dark veil keeps the light title readable over the glow of the fire. */}
             <div className="hero-veil" aria-hidden="true" />
           </m.div>
 

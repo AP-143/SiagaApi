@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 type Props = {
-  /** A picture under `public/landing/` (for example "/landing/hero-sky.webp"), or null to draw. */
+  /** A picture under `public/landing/` (for example "/landing/hero-night.webp"), or null to draw. */
   src: string | null;
   /** Describes the picture; leave out when it is only decoration. */
   alt?: string;

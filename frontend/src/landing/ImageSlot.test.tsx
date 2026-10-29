@@ -11,14 +11,14 @@ test("with no picture configured the slot shows its drawing", () => {
 });
 
 test("a configured picture replaces the drawing", () => {
-  render(<ImageSlot src="/landing/hero-sky.webp" alt="Langit fajar" fallback={<svg data-testid="drawing" />} />);
+  render(<ImageSlot src="/landing/hero-night.webp" alt="Hutan terbakar" fallback={<svg data-testid="drawing" />} />);
 
-  expect(screen.getByRole("img", { name: "Langit fajar" })).toHaveAttribute("src", "/landing/hero-sky.webp");
+  expect(screen.getByRole("img", { name: "Hutan terbakar" })).toHaveAttribute("src", "/landing/hero-night.webp");
   expect(screen.queryByTestId("drawing")).not.toBeInTheDocument();
 });
 
 test("a picture with no description is decorative and hidden from assistive technology", () => {
-  const { container } = render(<ImageSlot src="/landing/hero-sky.webp" fallback={null} />);
+  const { container } = render(<ImageSlot src="/landing/hero-night.webp" fallback={null} />);
 
   expect(screen.queryByRole("img")).not.toBeInTheDocument();
   expect(container.querySelector("img")).toHaveAttribute("alt", "");
