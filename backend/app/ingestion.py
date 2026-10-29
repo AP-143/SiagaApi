@@ -20,26 +20,30 @@ LOOKBACK_DAYS = 2
 # A Hotspot is kept only if its point lies inside a Province polygon (the Monitored Region).
 # The Regency is optional: boundary gaps can leave a point inside a Province but in no Regency.
 # It must belong to the Province chosen, so the two can never disagree where polygons overlap.
-INSERT_HOTSPOT_SQL = """
+INSERT_HOTSPOTS_SQL = """
 INSERT INTO hotspots
     (satellite, latitude, longitude, acquired_at, confidence, province_code, regency_code,
      peat_hotspot, geom)
-SELECT %(satellite)s, %(latitude)s, %(longitude)s, %(acquired_at)s, %(confidence)s,
+SELECT d.satellite, d.latitude, d.longitude, d.acquired_at, d.confidence,
        province.code,
        (SELECT r.code FROM regencies r
         WHERE r.province_code = province.code AND ST_Intersects(r.geom, point.geom)
         ORDER BY r.code LIMIT 1),
        EXISTS (SELECT 1 FROM peatlands pl WHERE ST_Intersects(pl.geom, point.geom)),
        point.geom
-FROM (SELECT ST_SetSRID(ST_MakePoint(%(longitude)s, %(latitude)s), 4326) AS geom) point
+FROM unnest(
+    %(satellite)s::text[], %(latitude)s::float8[], %(longitude)s::float8[],
+    %(acquired_at)s::timestamptz[], %(confidence)s::text[]
+) AS d(satellite, latitude, longitude, acquired_at, confidence)
+CROSS JOIN LATERAL (SELECT ST_SetSRID(ST_MakePoint(d.longitude, d.latitude), 4326) AS geom) point
 JOIN LATERAL (
     SELECT p.code FROM provinces p WHERE ST_Intersects(p.geom, point.geom)
     ORDER BY p.code LIMIT 1
 ) province ON true
 WHERE NOT EXISTS (
     SELECT 1 FROM hotspots h
-    WHERE h.satellite = %(satellite)s AND h.latitude = %(latitude)s
-      AND h.longitude = %(longitude)s AND h.acquired_at = %(acquired_at)s
+    WHERE h.satellite = d.satellite AND h.latitude = d.latitude
+      AND h.longitude = d.longitude AND h.acquired_at = d.acquired_at
 )
 ON CONFLICT (satellite, latitude, longitude, acquired_at) DO NOTHING
 """
@@ -59,22 +63,21 @@ def run_ingestion(
     for source in VIIRS_SOURCES:
         detections.extend(fetch_detections(settings, source, LOOKBACK_DAYS))
 
-    stored = 0
     with psycopg.connect(settings.database_url) as conn:
         ensure_schema(conn)
-        with conn.cursor() as cursor:
-            for detection in detections:
-                cursor.execute(
-                    INSERT_HOTSPOT_SQL,
-                    {
-                        "satellite": detection.satellite,
-                        "latitude": detection.latitude,
-                        "longitude": detection.longitude,
-                        "acquired_at": detection.acquired_at,
-                        "confidence": detection.confidence,
-                    },
-                )
-                stored += cursor.rowcount
+        # One statement for the whole batch: this runs on GitHub, far from the database, where every
+        # statement sent separately costs a round trip and thousands of them outlast the workflow.
+        cursor = conn.execute(
+            INSERT_HOTSPOTS_SQL,
+            {
+                "satellite": [d.satellite for d in detections],
+                "latitude": [d.latitude for d in detections],
+                "longitude": [d.longitude for d in detections],
+                "acquired_at": [d.acquired_at for d in detections],
+                "confidence": [d.confidence for d in detections],
+            },
+        )
+        stored = cursor.rowcount
         conn.execute(
             "INSERT INTO ingestion_runs (succeeded_at, fetched, stored) VALUES (%s, %s, %s)",
             (clock(), len(detections), stored),
