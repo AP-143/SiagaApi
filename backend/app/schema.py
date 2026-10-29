@@ -87,6 +87,14 @@ ALTER TABLE knowledge_chunks ADD COLUMN IF NOT EXISTS verbatim boolean NOT NULL 
 """
 
 
+# Any number; every copy of the API must use the same one.
+SCHEMA_LOCK_KEY = 7_361_204
+
+
 def ensure_schema(conn: psycopg.Connection) -> None:
+    # Several copies of the API may start at once (a serverless host does that). Their CREATE and ALTER
+    # statements each lock tables and would deadlock one another, so they queue on one lock instead; it is
+    # released by the commit, and the ones behind find everything already there.
+    conn.execute("SELECT pg_advisory_xact_lock(%s)", (SCHEMA_LOCK_KEY,))
     conn.execute(SCHEMA_SQL)
     conn.commit()

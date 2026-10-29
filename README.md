@@ -47,6 +47,18 @@ Frontend tests run against a mocked API (Seam 2: user-visible UI behavior):
 cd frontend && npm install && npm test
 ```
 
+## Settings for a public deployment
+
+The public site (plan in `docs/adr/0005-*.md`) serves the frontend from another website than the API. These settings are off by default, so local development is unchanged; all are listed in `.env.example`.
+
+- `TRUST_FORWARDED_FOR=true` (API): count each visitor for the rate limits by the right-most `X-Forwarded-For` entry. Turn it on only behind a proxy that adds that entry (Render does).
+- `CORS_ALLOWED_ORIGINS` (API): the website address(es) allowed to call the API, comma separated.
+- `VITE_API_BASE_URL` (frontend build): the API address; empty keeps the `/api` dev proxy.
+- `VITE_BASE_PATH` (frontend build): the folder the site is served from, for example `/SiagaApi/` on GitHub Pages; default `/`.
+- `KNOWLEDGE_EXCLUDE` (API and `load-knowledge`): file names of documents to keep out, for example the health texts that have not been reviewed.
+- `KNOWLEDGE_RELOAD_ON_START=false` (API): do not reload the documents at every start; only `load-knowledge` fills the table.
+- `EMBEDDING_MODEL_PATH` (API): a folder with the embedding model as flat files, as the Vercel build makes it.
+
 ## Chat language model (optional)
 
 The chat works on rules alone, and reads common typos, short forms and questions typed without spaces by code, with no model. A language model, when configured, helps it understand questions the rules cannot read, including badly misspelled ones (it only rewrites the spelling and spacing; the rules read the rewrite); numbers and places still come from the database (`docs/adr/0003-ai-layer-is-optional-grounded-and-swappable.md`). With no model, or when the model fails, the chat falls back to the rules and says it is in simple mode.

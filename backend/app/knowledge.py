@@ -11,6 +11,7 @@ answer is "not in our sources". If the embedding model is not available the sear
 
 import logging
 import re
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -118,14 +119,16 @@ def parse_document(path: Path) -> Document:
     return Document(name, meta["title"], meta["source"], url, reviewed, parsed, verbatim)
 
 
-def load_knowledge(conn: psycopg.Connection, directory: Path | str) -> int:
+def load_knowledge(conn: psycopg.Connection, directory: Path | str, exclude: Collection[str] = ()) -> int:
     """Replace the stored passages with the documents in `directory`; returns the passage count.
 
     Every document is read and checked before the database is touched, so one broken file can
-    never leave half a knowledge base behind. A missing folder simply means no knowledge.
+    never leave half a knowledge base behind. A missing folder simply means no knowledge. Files named in
+    `exclude` are skipped without being read (a public deployment keeps unreviewed documents out).
     """
     directory = Path(directory)
-    documents = [parse_document(p) for p in sorted(directory.glob("*.md"))] if directory.is_dir() else []
+    files = [p for p in sorted(directory.glob("*.md")) if p.name not in exclude] if directory.is_dir() else []
+    documents = [parse_document(p) for p in files]
     ensure_schema(conn)
     conn.execute("DELETE FROM knowledge_chunks")
     headings = [heading for doc in documents for heading, _ in doc.sections]
