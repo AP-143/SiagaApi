@@ -124,6 +124,15 @@ def asks_for_a_period_the_map_lacks(message: str) -> bool:
     return _window(normalize(message)) is None
 
 
+def words_scope(text: str) -> tuple[str | None, bool, bool]:
+    """The period, peat and low-confidence filters that a normalised question asks for in its own words.
+
+    The period is None when it names one the map lacks. Read from the words, so a rewrite of the question
+    (by code or by a model) can be held to what the person actually wrote.
+    """
+    return _window(text), bool(PEAT.search(text)), bool(LOW_CONFIDENCE.search(text))
+
+
 # What a repaired reading may turn a question into: a number, a ranking, or the freshness of the data.
 # Never a different kind of question: "berada" is an ordinary word one letter from "berapa".
 REPAIRABLE_INTENTS = {Intent.COUNT, Intent.RANKING, Intent.FRESHNESS}

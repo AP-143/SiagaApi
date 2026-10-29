@@ -53,17 +53,29 @@ def _is_one_substitution(word: str, candidate: str) -> bool:
     return len(word) == len(candidate) and sum(a != b for a, b in zip(word, candidate)) == 1
 
 
-def _nearest(word: str, vocabulary: dict[str, str]) -> str | None:
-    """The one vocabulary word within the allowed distance of `word`, or None (none, or a tie).
+# A message holds at most 500 characters, but a long vocabulary makes every word costly to place, so only
+# the first words of a message are examined by the repair and the damage check.
+MAX_EXAMINED_WORDS = 80
 
+
+def _by_first_letter(words) -> dict[str, list[str]]:
+    """The words grouped by their first letter: a slip rarely changes it, so only one group is compared."""
+    groups: dict[str, list[str]] = {}
+    for word in words:
+        groups.setdefault(word[0], []).append(word)
+    return groups
+
+
+def _nearest(word: str, candidates) -> str | None:
+    """The one candidate within the allowed distance of `word`, or None (none, or a tie).
+
+    `candidates` are the words that start with the same letter as `word`.
     A word one substituted letter from a known word is not a candidate: "susah" and "sudah", "bulat" and
     "bulan" are both real words, so changing one into the other would be a guess.
     """
     best: int | None = None
     found: set[str] = set()
-    for candidate in vocabulary:
-        if candidate[0] != word[0]:
-            continue  # a slip rarely changes the first letter
+    for candidate in candidates:
         if _is_one_substitution(word, candidate):
             continue
         distance = edit_distance(word, candidate, allowed_distance(len(candidate)))
@@ -89,13 +101,20 @@ def repair_words(text: str, place_words: set[str], document_words: frozenset[str
         vocabulary.setdefault(word, "place")
     for word in document_words:
         vocabulary.setdefault(word, "document")
+    buckets = _by_first_letter(vocabulary)
     words: list[str] = []
     typed: list[str] = []
     read: list[str] = []
-    for word in text.split():
+    for position, word in enumerate(text.split()):
         replacement = SHORT_FORMS.get(word)
-        if replacement is None and len(word) >= MIN_REPAIRABLE and word not in vocabulary and word.isalpha():
-            candidate = _nearest(word, vocabulary)
+        if (
+            replacement is None
+            and position < MAX_EXAMINED_WORDS
+            and len(word) >= MIN_REPAIRABLE
+            and word not in vocabulary
+            and word.isalpha()
+        ):
+            candidate = _nearest(word, buckets.get(word[0], ()))
             if candidate is not None and vocabulary[candidate] in ("rule", "document"):
                 replacement = candidate
         if replacement is not None and replacement != word:
@@ -169,7 +188,7 @@ def _nearly(word: str, other: str) -> bool:
     """True when `word` could be `other` typed badly: a letter off, or letters left out ("ttk" for "titik")."""
     if edit_distance(word, other, 2 if len(word) >= 7 else 1) is not None:
         return True
-    return word[0] == other[0] and 1 <= len(other) - len(word) <= 2 and _is_subsequence(word, other)
+    return 1 <= len(other) - len(word) <= 2 and _is_subsequence(word, other)
 
 
 def looks_damaged(
@@ -182,13 +201,13 @@ def looks_damaged(
     something else shows no sign, so it costs no model call.
     """
     known = RULE_WORDS | FUNCTION_WORDS | place_words | set(document_words)
-    comparable = [word for word in RULE_WORDS | set(document_words) if len(word) >= 4]
-    for word in text.split():
+    comparable = _by_first_letter(word for word in RULE_WORDS | set(document_words) if len(word) >= 4)
+    for word in text.split()[:MAX_EXAMINED_WORDS]:
         if not word.isalpha() or word in known:
             continue
         if len(word) >= LONGEST_PLAIN_WORD:
             return True
-        if len(word) >= MIN_DAMAGED_WORD and any(_nearly(word, other) for other in comparable):
+        if len(word) >= MIN_DAMAGED_WORD and any(_nearly(word, other) for other in comparable.get(word[0], ())):
             return True
     return False
 

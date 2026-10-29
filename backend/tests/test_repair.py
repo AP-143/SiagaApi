@@ -64,3 +64,40 @@ def test_a_question_with_a_nearly_known_word_or_a_very_long_run_of_letters_looks
 def test_a_well_written_question_about_something_else_does_not_look_damaged():
     assert not looks_damaged("bagaimana cara membuat kue brownies yang enak", {"sambas"})
     assert not looks_damaged("obat apa yang bagus untuk batuk akibat asap", {"sambas"}, {"asap"})
+
+
+def test_the_damage_check_looks_at_a_bounded_number_of_words_however_long_the_message():
+    import time
+
+    vocabulary = {f"{a}{b}{c}{d}" for a in "abcdefghij" for b in "aeiou" for c in "klmnprst" for d in "aeiou"}
+    message = " ".join(["xqzvw"] * 250)  # 500 characters, none of them a known word
+
+    started = time.perf_counter()
+    looks_damaged(message, set(), vocabulary)
+
+    assert time.perf_counter() - started < 1.0
+
+
+def test_the_words_of_the_documents_are_read_again_only_when_the_documents_change(database_url, tmp_path):
+    import psycopg
+
+    from app.knowledge import document_words, load_knowledge
+
+    def write(text):
+        folder = tmp_path / "docs"
+        folder.mkdir(exist_ok=True)
+        (folder / "a.md").write_text(
+            f"---\ntitle: Uji\nsource: Sumber uji\nreviewed: 2026-02-03\n---\n\n## Judul uji?\n\n{text}\n",
+            encoding="utf-8",
+        )
+        return folder
+
+    with psycopg.connect(database_url) as conn:
+        load_knowledge(conn, write("Gambut menyimpan karbon."))
+        first = document_words(conn)
+        assert "gambut" in first and "karbon" in first
+        assert document_words(conn) is first  # nothing changed, so nothing was read again
+
+        load_knowledge(conn, write("Mangrove menahan abrasi."))
+        second = document_words(conn)
+        assert "mangrove" in second and "gambut" not in second

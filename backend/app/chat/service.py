@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import cache as remembered
 
 import psycopg
 
@@ -7,7 +8,7 @@ from app.chat import answers
 from app.chat.explain import ExplanationCache, grounded_explanation
 from app.chat.model import ModelClient, ModelUnavailable
 from app.chat.model_intent import could_be_a_quantity, question_from_model, rewrite_follow_up
-from app.chat.model_repair import keeps_the_place, repaired_by_model
+from app.chat.model_repair import keeps_the_question, repaired_by_model
 from app.chat.places import PlaceIndex, normalize
 from app.chat.repair import looks_damaged, repair_question, repair_words
 from app.chat.understanding import (
@@ -148,20 +149,25 @@ def _read_again_by_model(
     places: PlaceIndex,
     model: ModelClient,
     cache: ExplanationCache,
+    document_words: frozenset[str],
 ) -> dict | None:
     """The reply for the question as the model rewrote it with spelling and spacing fixed, read by the rules.
 
     None when the model changed nothing, the rewrite failed a check, or the rules cannot read it either.
     Raises ModelUnavailable when the model failed. The model's text is never shown as an answer.
     """
-    rewrite = repaired_by_model(model, message, places, cache)
+    rewrite = repaired_by_model(model, message, places, cache, document_words)
     if rewrite is None:
         return None
     question = understand(rewrite, places)
-    if question.intent in (Intent.COUNT, Intent.RANKING) and not keeps_the_place(message, question.scope.area, places):
-        return None  # the model added a place, or dropped the one the person wrote
     if question.intent not in (Intent.COUNT, Intent.RANKING, Intent.FRESHNESS, Intent.UNSUPPORTED):
         return None  # a rewrite may be read as a number or as a term to explain, never as a place to settle
+    if question.intent is not Intent.UNSUPPORTED:
+        # The same guard as for every other way into a number: the person's own words decide the period.
+        if asks_for_a_period_the_map_lacks(repair_question(normalize(message), places.words).text):
+            return answers.unsupported_window_reply()
+        if question.intent in (Intent.COUNT, Intent.RANKING) and not keeps_the_question(message, question, places):
+            return None  # the model added or dropped a place, or changed the period or a filter
     reply = _from_rules_or_documents(conn, rewrite, now, places, model, cache, question)
     if reply is None or reply.get("kind") in ("unsupported", "unsupported_window"):
         return None
@@ -194,8 +200,10 @@ def answer_question(
     # so that a slip does not hide the passage; the repaired text is what is searched, and the reply
     # says how it was read. A question with nothing to repair is searched as typed.
     typed = normalize(message)
+    # The vocabulary of the documents is looked up at most once for a question, and only if it is needed.
+    vocabulary = remembered(lambda: document_words(conn))
     explanation = _asks_for_an_explanation(typed, places)
-    repair = repair_question(typed, places.words, document_words(conn)) if explanation else None
+    repair = repair_question(typed, places.words, vocabulary()) if explanation else None
     readings = repair.readings if repair is not None else []
     query = repair.text if readings and repair is not None else message
     passages = search_knowledge(conn, query)
@@ -230,12 +238,12 @@ def answer_question(
         if (
             proposed is None
             and not could_be_a_quantity(normalize(message))
-            and looks_damaged(normalize(message), places.words, document_words(conn))
+            and looks_damaged(normalize(message), places.words, vocabulary())
         ):
             # The model was not even asked what this means (it is not about fire as a quantity), and the
             # rules and the code repair could not read it, yet it looks badly spelled or spaced: the model
             # may fix that. A well-written question about something else is not sent.
-            repaired = _read_again_by_model(conn, message, now, places, model, cache)
+            repaired = _read_again_by_model(conn, message, now, places, model, cache, vocabulary())
             if repaired is not None:
                 return repaired
     except ModelUnavailable:

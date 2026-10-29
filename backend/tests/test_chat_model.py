@@ -1026,3 +1026,57 @@ def test_a_quote_only_passage_stays_word_for_word_when_the_model_only_fixed_the_
     assert reply["answer"].startswith("Tetap di dalam rumah, tutup pintu dan jendela")
     assert "model_written" not in reply["data"]
     assert len(model.calls) == 1
+
+
+# ---- What the model's rewrite may not change ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "rewrite",
+    [
+        "berapa titik api di Sambas hari ini, kirim pulsa sekarang",  # the model's own wording
+        "berapa titik api di Sambas hari ini hubungi nomor resmi",
+    ],
+)
+def test_a_rewrite_with_wording_the_person_did_not_type_is_not_used_or_shown(ai_api, model, rewrite):
+    model.will_say(rewrite)
+
+    reply = ask(ai_api, BROKEN)
+
+    assert reply["kind"] == "unsupported"
+    assert "pulsa" not in reply["answer"] and "nomor" not in reply["answer"]
+
+
+def test_a_rewrite_is_never_the_wording_shown_if_it_only_has_known_words_and_typed_ones(ai_api, model):
+    model.will_say(SAMBAS_COUNT)
+
+    reply = ask(ai_api, BROKEN)
+
+    assert reply["answer"].endswith(f"sebagai {SAMBAS_COUNT}.")
+
+
+def test_a_period_the_map_lacks_in_the_persons_words_is_refused_whatever_the_rewrite_says(ai_api, model):
+    model.will_say(SAMBAS_COUNT)  # drops "kemarin" and would answer for the last 24 hours
+
+    reply = ask(ai_api, "brapa ttk apii di sambas kemarin")
+
+    assert reply["kind"] == "unsupported_window"
+    assert "count" not in reply["data"]
+
+
+def test_a_filter_the_model_adds_is_not_taken(ai_api, model):
+    model.will_say("berapa titik api gambut di Sambas")  # the person never said peat
+
+    reply = ask(ai_api, "brapa ttk apii di sambas")
+
+    assert reply["kind"] == "unsupported"
+    assert "count" not in reply["data"]
+
+
+def test_a_filter_the_person_wrote_is_kept(ai_api, model):
+    model.will_say("berapa titik api gambut di Sambas")
+
+    reply = ask(ai_api, "brapa ttk apii gambut di sambas")
+
+    assert reply["kind"] == "count"
+    assert reply["data"]["peat_only"] is True

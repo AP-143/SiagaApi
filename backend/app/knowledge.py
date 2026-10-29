@@ -206,17 +206,32 @@ def search_knowledge(conn: psycopg.Connection, question: str, limit: int = MAX_P
     return found[:limit]
 
 
-def document_words(conn: psycopg.Connection) -> set[str]:
+# The vocabulary of the loaded documents, with the state of the table it was read from. The chat asks for it
+# on many requests and the documents change only when they are reloaded, so it is read again only when the
+# table has changed (the API and the loading command are separate processes, so the table is the signal).
+_vocabulary: tuple[tuple, frozenset[str]] | None = None
+
+
+def document_words(conn: psycopg.Connection) -> frozenset[str]:
     """The words (letters only, four or more) of the loaded documents, for reading a misspelled term.
 
     Character similarity is done here, against this vocabulary, with the same rules as every other
     repair (one nearest word, a tie is no repair), rather than with pg_trgm: no extension or schema step,
     and the same behaviour in tests and in production.
     """
+    global _vocabulary
+    # Reloading replaces every row, so the newest id, the count and the amount of text change together.
+    state = conn.execute(
+        "SELECT count(*), coalesce(max(id), 0), coalesce(sum(length(heading) + length(body)), 0) FROM knowledge_chunks"
+    ).fetchone()
+    cached = _vocabulary
+    if cached is not None and cached[0] == state:
+        return cached[1]
     words: set[str] = set()
     for heading, body in conn.execute("SELECT heading, body FROM knowledge_chunks"):
         words.update(re.findall(r"[a-z]{4,}", f"{heading} {body}".lower()))
-    return words
+    _vocabulary = (state, frozenset(words))
+    return _vocabulary[1]
 
 
 def is_too_short_to_stand_alone(conn: psycopg.Connection, question: str) -> bool:
