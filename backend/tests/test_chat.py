@@ -438,3 +438,16 @@ def test_a_ranking_lists_only_the_top_five_in_the_answer_as_well_as_in_the_data(
     assert "Kabupaten Tujuh: 7 titik api" in reply["answer"]
     assert "Kabupaten Satu" not in reply["answer"]  # only 1 Hotspot: outside the top five
     assert "5 teratas" in reply["answer"]
+
+
+def test_a_preposition_written_stuck_to_the_name_is_still_understood(real_names):
+    # People type "dikalimantan utara" for "di Kalimantan Utara"; it must not fall back to all of Kalimantan.
+    assert area_of(real_names, "ada berapa titik api dikalimantan utara") == "Kalimantan Utara"
+    assert area_of(real_names, "titik api dikotabaru") == "Kota Baru"
+    assert area_of(real_names, "titik api kesingkawang") == "Kota Singkawang"
+
+
+def test_a_word_that_merely_starts_with_di_is_not_split_into_a_place(real_names):
+    reply = ask(real_names, "berapa titik api yang terdeteksi dimana saja?")
+
+    assert reply["data"]["area"]["type"] == "region"

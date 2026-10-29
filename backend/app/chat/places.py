@@ -89,6 +89,8 @@ class PlaceIndex:
         for area in areas:
             for alias in PROVINCE_ALIASES.get(area.code, []):
                 self._names.append((alias, area))
+        # What a name can start with, for splitting a preposition stuck to it ("dikalimantan utara").
+        self._starts = {norm.split()[0] for norm, _ in self._names} | {norm for norm, _ in self._names}
         self._tokens: dict[str, set[Area]] = {}
         for norm, area in self._names:
             for token in norm.split():
@@ -109,8 +111,22 @@ class PlaceIndex:
         ]
         return cls(areas)
 
+    def _split_stuck_prepositions(self, text: str) -> str:
+        """"dikalimantan utara" -> "di kalimantan utara", but only when what follows "di"/"ke" begins a
+        name we know; "dimana" and "kemarin" are left as they are."""
+        words = []
+        for word in text.split():
+            for preposition in ("di", "ke"):
+                rest = word[len(preposition):]
+                if word.startswith(preposition) and len(rest) >= 4 and rest in self._starts:
+                    words += [preposition, rest]
+                    break
+            else:
+                words.append(word)
+        return " ".join(words)
+
     def resolve(self, message: str) -> Resolution:
-        text = f" {normalize(message)} "
+        text = f" {self._split_stuck_prepositions(normalize(message))} "
 
         # 1. A full name (or alias) written out, preferring the longest one.
         found = {}
