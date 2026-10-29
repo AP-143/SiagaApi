@@ -11,7 +11,8 @@ cp .env.example .env     # then put your FIRMS MAP_KEY in .env
 docker compose up
 ```
 
-- Web app: http://localhost:5173
+- Landing: http://localhost:5173/ (a scrolling editorial page that explains what a Hotspot is; "Buka peta" leads on)
+- Map: http://localhost:5173/peta (a link with filters, such as `/?province=ID62`, also opens the map)
 - API: http://localhost:8000 (health check at `/health`)
 - `ingestor` fetches Hotspots from NASA FIRMS every 30 minutes
 
@@ -48,7 +49,7 @@ cd frontend && npm install && npm test
 
 ## Chat language model (optional)
 
-The chat works on rules alone. A language model, when configured, helps it understand questions the rules cannot read; numbers and places still come from the database (`docs/adr/0003-ai-layer-is-optional-grounded-and-swappable.md`). With no model, or when the model fails, the chat falls back to the rules and says it is in simple mode.
+The chat works on rules alone, and reads common typos, short forms and questions typed without spaces by code, with no model. A language model, when configured, helps it understand questions the rules cannot read, including badly misspelled ones (it only rewrites the spelling and spacing; the rules read the rewrite); numbers and places still come from the database (`docs/adr/0003-ai-layer-is-optional-grounded-and-swappable.md`). With no model, or when the model fails, the chat falls back to the rules and says it is in simple mode.
 
 The API talks to any server that speaks the OpenAI chat format, chosen in `.env` (see `.env.example`): `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` and `LLM_TIMEOUT_SECONDS`. Leave `LLM_BASE_URL` empty to keep the model off.
 
@@ -67,7 +68,7 @@ The model measured best so far is `qwen2.5:3b` (see `docs/chatbot.md`): `ollama 
 docker compose run --rm api python -m app.cli evaluate-model --model <model> [--verbose]
 ```
 
-It asks about a hundred questions (explanations, synonyms, questions the documents do not cover, free-form counts, follow-ups, greetings and hostile ones) and prints how many the chat got right per group, how many calls failed, and how long it took. Results and the chosen default are in `docs/chatbot.md`.
+It asks about a hundred questions (explanations, synonyms, questions the documents do not cover, free-form counts, follow-ups, greetings and hostile ones) and prints how many the chat got right per group, how many calls failed, and how long it took. Results and the chosen default are in `docs/chatbot.md`. Add `--repair` to run only the misspelled and unspaced questions, each with and without the model.
 
 **A hosted API**: set the same three variables to its address, model and key (for example Groq, OpenRouter or Cloudflare Workers AI). Free tiers have limits for the whole application, and some use prompts for training, so read the provider's terms first and never put a key in the repository.
 

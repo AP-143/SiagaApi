@@ -5,11 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import type { Hotspot } from "../api";
 import type { LayerData } from "../layers";
 import { satelliteTileUrl } from "../satellite";
-import type { Theme } from "../theme";
 import { LAYER_NAMES, type MapViewState } from "../view";
 import { basemapPaint } from "./basemap";
-import { KALIMANTAN_BOUNDS } from "./kalimantan";
-import { OVERLAY_LAYERS, boundaryLineColor, overlayLayerSpecs } from "./overlays";
+import { FrameIcon, MinusIcon, PlusIcon } from "../icons";
+import { KALIMANTAN_BOUNDS, framePadding } from "./kalimantan";
+import { OVERLAY_LAYERS, overlayLayerSpecs } from "./overlays";
 import { buildHotspotPopup } from "./popup";
 
 const HOTSPOT_SOURCE = "hotspots";
@@ -49,7 +49,7 @@ function visibility(shown: boolean): "visible" | "none" {
   return shown ? "visible" : "none";
 }
 
-function basemapStyle(theme: Theme, view: MapViewState, satelliteDate: string) {
+function basemapStyle(view: MapViewState, satelliteDate: string) {
   return {
     version: 8 as const,
     sources: {
@@ -73,7 +73,7 @@ function basemapStyle(theme: Theme, view: MapViewState, satelliteDate: string) {
         type: "raster" as const,
         source: "osm",
         layout: { visibility: visibility(view.basemap === "map") },
-        paint: basemapPaint(theme),
+        paint: basemapPaint(),
       },
       {
         id: SATELLITE_LAYER,
@@ -85,45 +85,55 @@ function basemapStyle(theme: Theme, view: MapViewState, satelliteDate: string) {
   };
 }
 
+/** Fit the map to Kalimantan with room for the bars around it. */
+function frameKalimantan(map: maplibregl.Map, animate: boolean) {
+  map.fitBounds(KALIMANTAN_BOUNDS, { padding: framePadding(), animate, duration: 700 });
+}
+
 function toCollection(hotspots: Hotspot[]): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: hotspots };
 }
 
 type Props = {
   hotspots: Hotspot[];
-  theme: Theme;
   view: MapViewState;
   layerData: LayerData;
   satelliteDate: string;
+  /** Goes up each time the map should move to the Hotspots it is now showing. */
+  focus: number;
 };
 
-export default function MapView({ hotspots, theme, view, layerData, satelliteDate }: Props) {
+export default function MapView({ hotspots, view, layerData, satelliteDate, focus }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [ready, setReady] = useState(false);
   // Always the latest values, so map callbacks never see stale ones.
-  const latest = useRef({ hotspots, theme, view, layerData, satelliteDate });
-  latest.current = { hotspots, theme, view, layerData, satelliteDate };
-  const paintedTheme = useRef<Theme>(theme);
+  const latest = useRef({ hotspots, view, layerData, satelliteDate });
+  latest.current = { hotspots, view, layerData, satelliteDate };
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const { theme: initialTheme, view: initialView, satelliteDate: date } = latest.current;
+    const { view: initialView, satelliteDate: date } = latest.current;
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: basemapStyle(initialTheme, initialView, date),
+      style: basemapStyle(initialView, date),
       bounds: KALIMANTAN_BOUNDS,
+      // The map's own attribution button is off: the "Sumber data" chip carries every credit, so there
+      // is a single info button instead of two.
+      attributionControl: false,
     });
     mapRef.current = map;
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
     map.on("load", () => {
+      // The container may not have had its final size when the map was built, so frame again now.
+      map.resize();
+      frameKalimantan(map, false);
       const current = latest.current;
       // Boundary and peatland layers go in first, so everything below is drawn under the Hotspots.
       for (const name of LAYER_NAMES) {
         map.addSource(name, { type: "geojson", data: current.layerData[name] ?? EMPTY });
       }
-      for (const spec of overlayLayerSpecs(current.theme, current.view.basemap)) {
+      for (const spec of overlayLayerSpecs()) {
         const layer = OVERLAY_LAYERS.find((candidate) => candidate.id === spec.id)!.layer;
         map.addLayer({ ...spec, layout: { visibility: visibility(current.view.layers[layer]) } });
       }
@@ -181,6 +191,28 @@ export default function MapView({ hotspots, theme, view, layerData, satelliteDat
     };
   }, []);
 
+  // After "Tampilkan di peta": move to where the Hotspots are, or back to Kalimantan if there are none.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || focus === 0) return;
+    const points = latest.current.hotspots.map((hotspot) => hotspot.geometry.coordinates);
+    if (points.length === 0) {
+      frameKalimantan(map, true);
+      return;
+    }
+    const lngs = points.map(([lng]) => lng);
+    const lats = points.map(([, lat]) => lat);
+    map.fitBounds(
+      [
+        [Math.min(...lngs), Math.min(...lats)],
+        [Math.max(...lngs), Math.max(...lats)],
+      ],
+      { padding: framePadding(), maxZoom: 9, animate: true, duration: 700 },
+    );
+    // Only when asked: a refresh of the same Hotspots must not move the map under someone's hands.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus]);
+
   useEffect(() => {
     const source = mapRef.current?.getSource(HOTSPOT_SOURCE) as maplibregl.GeoJSONSource | undefined;
     source?.setData(toCollection(hotspots));
@@ -211,28 +243,26 @@ export default function MapView({ hotspots, theme, view, layerData, satelliteDat
     map.setLayoutProperty(SATELLITE_LAYER, "visibility", visibility(view.basemap === "satellite"));
   }, [view.basemap, ready]);
 
-  // Boundary lines must stay readable as the background changes between light, dark and satellite.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) return;
-    const color = boundaryLineColor(theme, view.basemap);
-    map.setPaintProperty("regency-lines", "line-color", color);
-    map.setPaintProperty("province-lines", "line-color", color);
-  }, [theme, view.basemap, ready]);
-
-  // Retint the street map in place when the theme changes; the map itself is never rebuilt.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || paintedTheme.current === theme) return;
-    const apply = () => {
-      for (const [property, value] of Object.entries(basemapPaint(theme))) {
-        map.setPaintProperty(STREET_LAYER, property, value);
-      }
-      paintedTheme.current = theme;
-    };
-    if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
-  }, [theme]);
-
-  return <div ref={containerRef} className="map" aria-label="Peta Kalimantan" />;
+  return (
+    <>
+      <div ref={containerRef} className="map" aria-label="Peta Kalimantan" />
+      {/* One group of three buttons of the same size, drawn by us so they are always the same distance apart. */}
+      <div className="map-controls" role="group" aria-label="Kontrol peta">
+        <button type="button" aria-label="Perbesar" title="Perbesar" onClick={() => mapRef.current?.zoomIn()}>
+          <PlusIcon />
+        </button>
+        <button type="button" aria-label="Perkecil" title="Perkecil" onClick={() => mapRef.current?.zoomOut()}>
+          <MinusIcon />
+        </button>
+        <button
+          type="button"
+          aria-label="Tampilkan seluruh Kalimantan"
+          title="Tampilkan seluruh Kalimantan"
+          onClick={() => mapRef.current && frameKalimantan(mapRef.current, true)}
+        >
+          <FrameIcon />
+        </button>
+      </div>
+    </>
+  );
 }

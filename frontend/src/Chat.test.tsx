@@ -1,8 +1,9 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import App from "./App";
+import { KALIMANTAN_BOUNDS } from "./map/kalimantan";
 import { createdMaps, openPopups } from "./test/fakeMapLibre";
 import { SAMBAS_HOTSPOT, collection } from "./test/hotspotFixtures";
 import { mockApi } from "./test/mockApi";
@@ -29,11 +30,13 @@ function setup(
   address = "/",
   /** What /chat/status says; left out, the route does not exist, like an older server. */
   status?: { ai: boolean },
+  /** What /hotspots answers; by default the one Sambas Hotspot. */
+  hotspots: unknown = collection(SAMBAS_HOTSPOT),
 ) {
   window.history.replaceState({}, "", address);
   const fetchMock = mockApi({
     ...(status ? { "/chat/status": status } : {}),
-    "/hotspots": collection(SAMBAS_HOTSPOT),
+    "/hotspots": hotspots,
     "/hotspots/counts": [],
     "/provinces": [],
     "/freshness": { last_updated: "2026-10-16T07:00:00Z", stale: false },
@@ -413,9 +416,14 @@ const SAMBAS_AREA = { type: "regency", code: "ID6101", name: "Sambas", province_
 const REGION_AREA = { type: "region", name: "Kalimantan" };
 
 function viewReply(area: Record<string, unknown>, extra: Record<string, unknown> = {}, kind = "count"): Reply {
+  const readAs = extra.read_as as { typed: string; as: string } | undefined;
   return {
     kind,
-    answer: "Dalam 48 jam terakhir ada 12 titik api.",
+    answer:
+      "Dalam 48 jam terakhir ada 12 titik api." +
+      (readAs ? `
+
+Saya membaca '${readAs.typed}' sebagai ${readAs.as}.` : ""),
     data: { count: 12, area, window: "48h", peat_only: false, include_low: false, ...extra },
   };
 }
@@ -872,4 +880,143 @@ test("a data answer is not labelled as written by the AI", async () => {
 
   await within(log).findByText(/3\.295 titik api/);
   expect(screen.queryByText(/Dijawab AI/)).toBeNull();
+});
+
+test("an answer with no source shows no stray digit where the source line would be", async () => {
+  setup();
+  const log = await openChat();
+
+  await ask("Berapa titik api di Kalimantan Tengah?");
+
+  await within(log).findByText(/3\.295 titik api/);
+  expect(within(log).queryByText("0")).toBeNull();
+  expect(log.querySelector(".source-note")).toBeNull();
+});
+
+test("a ranking that can be shown on the map has no stray digit before its button", async () => {
+  setup(() =>
+    json({
+      kind: "ranking",
+      answer: "Peringkat 5 teratas.\n1. Seruyan: 1.027 titik api\nData terakhir diperbarui 29 Okt 2026.",
+      data: {
+        ranking: [{ name: "Seruyan", count: 1027 }],
+        area: REGION_AREA,
+        window: "24h",
+        peat_only: false,
+        include_low: false,
+      },
+    }),
+  );
+  const log = await openChat();
+
+  await ask("kabupaten mana paling banyak");
+
+  expect(await within(log).findByRole("button", { name: "Tampilkan di peta" })).toBeInTheDocument();
+  expect(within(log).queryByText("0")).toBeNull();
+  // The button is the last thing in the answer: nothing but whitespace may sit before it.
+  const button = within(log).getByRole("button", { name: "Tampilkan di peta" });
+  expect(button.previousSibling?.textContent ?? "").not.toMatch(/^\s*0\s*$/);
+});
+
+test("the send button is a small icon with the name 'Kirim', and it is disabled until there is a question", async () => {
+  setup();
+  await openChat();
+  const send = screen.getByRole("button", { name: "Kirim" });
+
+  expect(send.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  expect(send).toHaveTextContent("");
+  expect(send).toBeDisabled();
+
+  await userEvent.type(screen.getByRole("textbox", { name: "Pertanyaan" }), "halo");
+
+  expect(send).toBeEnabled();
+});
+
+test("the row of suggested questions slides sideways with the mouse wheel when it is wider than the sheet", async () => {
+  setup();
+  const log = await openChat();
+  const chips = log.querySelector<HTMLElement>(".chat-chips")!;
+  Object.defineProperty(chips, "scrollWidth", { configurable: true, value: 900 });
+  Object.defineProperty(chips, "clientWidth", { configurable: true, value: 300 });
+
+  fireEvent.wheel(chips, { deltaY: 120 });
+
+  expect(chips.scrollLeft).toBe(120);
+});
+
+test("the wheel is left alone when every suggestion already fits", async () => {
+  setup();
+  const log = await openChat();
+  const chips = log.querySelector<HTMLElement>(".chat-chips")!;
+  Object.defineProperty(chips, "scrollWidth", { configurable: true, value: 300 });
+  Object.defineProperty(chips, "clientWidth", { configurable: true, value: 300 });
+
+  fireEvent.wheel(chips, { deltaY: 120 });
+
+  expect(chips.scrollLeft).toBe(0);
+});
+
+test("showing an answer on the map moves the map to where its Hotspots are", async () => {
+  const fetchMock = setup(() => json(viewReply(KALTENG_AREA)));
+  await waitFor(() => expect(createdMaps[0].hotspotData("hotspots")).toHaveLength(1));
+  const before = createdMaps[0].fitBoundsCalls.length;
+
+  await askAndShowOnMap(fetchMock);
+
+  await waitFor(() => expect(createdMaps[0].fitBoundsCalls.length).toBeGreaterThan(before));
+  const move = createdMaps[0].fitBoundsCalls.at(-1)!;
+  const [lng, lat] = (SAMBAS_HOTSPOT as { geometry: { coordinates: number[] } }).geometry.coordinates;
+  expect(move.bounds).toEqual([[lng, lat], [lng, lat]]);
+  expect(move.options.animate).toBe(true);
+  expect(move.options.maxZoom).toBeLessThanOrEqual(9);
+});
+
+test("showing an answer with no Hotspots frames Kalimantan instead of staying where it was", async () => {
+  const fetchMock = setup(() => json(viewReply(KALTENG_AREA)), "/", undefined, collection());
+  await waitFor(() => expect(createdMaps[0].fitBoundsCalls.length).toBeGreaterThan(0));
+  const before = createdMaps[0].fitBoundsCalls.length;
+
+  await askAndShowOnMap(fetchMock);
+
+  await waitFor(() => expect(createdMaps[0].fitBoundsCalls.length).toBeGreaterThan(before));
+  expect(createdMaps[0].fitBoundsCalls.at(-1)!.bounds).toEqual(KALIMANTAN_BOUNDS);
+});
+
+test("the button that shows an answer on the map is its own button, with an icon", async () => {
+  setup(() => json(viewReply(KALTENG_AREA)));
+  const log = await openChat();
+  await ask("pertanyaan");
+
+  const button = await within(log).findByRole("button", { name: "Tampilkan di peta" });
+  expect(button).toHaveClass("map-button");
+  expect(button).not.toHaveClass("chip-button");
+  expect(button.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+});
+
+test("an answer that read a misspelled place says so in a small line of its own", async () => {
+  setup(() =>
+    json(
+      viewReply(KALTENG_AREA, {
+        read_as: { typed: "kalimantan tengh", as: "Kalimantan Tengah" },
+      }),
+      undefined,
+    ),
+  );
+  const log = await openChat();
+  await ask("titik api di kalimantan tengh");
+
+  await within(log).findByText(/titik api\./);
+  const note = log.querySelector(".reading-note")!;
+  expect(note).toHaveTextContent("Saya membaca 'kalimantan tengh' sebagai Kalimantan Tengah.");
+  // It is shown once: not also inside the answer's own text.
+  expect(within(log).getAllByText(/Saya membaca/)).toHaveLength(1);
+});
+
+test("an answer that needed no repair has no reading note", async () => {
+  setup(() => json(viewReply(KALTENG_AREA)));
+  const log = await openChat();
+  await ask("titik api di kalimantan tengah");
+
+  await within(log).findByText(/titik api\./);
+  expect(log.querySelector(".reading-note")).toBeNull();
 });

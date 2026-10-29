@@ -269,7 +269,8 @@ test("on a wide screen the legend starts open and can be folded away", async () 
   await userEvent.click(toggle);
 
   expect(toggle).toHaveAttribute("aria-expanded", "false");
-  expect(within(legend).queryByText(/jingga/i)).toBeNull();
+  // The panel eases shut, so its content is gone a moment later rather than at once.
+  await waitFor(() => expect(within(legend).queryByText(/jingga/i)).toBeNull());
 });
 
 test("on a phone the legend starts folded, opens from its own button, and leaves the other panels alone", async () => {
@@ -288,15 +289,18 @@ test("on a phone the legend starts folded, opens from its own button, and leaves
   expect(screen.getByRole("button", { name: "Ringkasan" })).toHaveAttribute("aria-expanded", "false");
 });
 
-test("opening a panel on a phone does not fold the legend away", async () => {
+test("on a phone the legend is one of the bar's panels: opening another one replaces it", async () => {
   viewport(true);
   setup();
   const legend = await screen.findByRole("region", { name: "Keterangan" });
-  await userEvent.click(within(legend).getByRole("button", { name: "Keterangan" }));
+  const toggle = within(legend).getByRole("button", { name: "Keterangan" });
+  await userEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
 
   await userEvent.click(screen.getByRole("button", { name: "Filter" }));
 
-  expect(within(legend).getByText(/jingga/i)).toBeInTheDocument();
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(screen.getByRole("button", { name: "Filter" })).toHaveAttribute("aria-expanded", "true");
 });
 
 test("the legend still explains the layers that are switched on", async () => {

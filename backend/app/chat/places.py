@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 
 import psycopg
 
+from app.chat.fuzzy import allowed_distance, edit_distance
+
 # Common short forms people use for the five Provinces.
 PROVINCE_ALIASES = {
     "ID61": ["kalbar"],
@@ -26,6 +28,7 @@ NOT_PLACE_WORDS = {
     "itu", "antara", "dalam", "atas", "bawah", "area", "wilayah", "daerah", "kepercayaan",
     "rendah", "kabupaten", "kota", "provinsi", "jam", "minggu", "pekan", "bulan", "tahun",
     "kawasan", "tiap", "setiap", "masing", "saya", "kami", "kita",
+    "dengan", "yang", "paling", "dan", "atau",  # "kabupaten dengan titik api terbanyak" names no place
 }
 
 PLACE_AFTER = re.compile(r"\b(?:di|ke|dekat|sekitar|wilayah|daerah|kota|kabupaten|provinsi)\s+([a-z]+(?:\s[a-z]+)?)")
@@ -77,6 +80,10 @@ class Resolution:
     area: Area | None = None
     candidates: list[Area] = field(default_factory=list)
     unknown_phrase: str | None = None
+    # A place that was misspelled: (what was typed, the name it was read as). Set only for a repair.
+    read_as: tuple[str, str] | None = None
+    # For an unknown place: the nearest known name, offered as "Maksud Anda ...?".
+    suggestion: str | None = None
 
 
 class PlaceIndex:
@@ -89,6 +96,10 @@ class PlaceIndex:
         for area in areas:
             for alias in PROVINCE_ALIASES.get(area.code, []):
                 self._names.append((alias, area))
+        # What a name can start with, for splitting a preposition stuck to it ("dikalimantan utara").
+        self._starts = {norm.split()[0] for norm, _ in self._names} | {norm for norm, _ in self._names}
+        # Every word of every name, so the word repair can leave a place word to the place repair.
+        self.words = {w for norm, _ in self._names for w in [*norm.split(), norm] if len(w) >= 4}
         self._tokens: dict[str, set[Area]] = {}
         for norm, area in self._names:
             for token in norm.split():
@@ -109,8 +120,70 @@ class PlaceIndex:
         ]
         return cls(areas)
 
+    def _split_stuck_prepositions(self, text: str) -> str:
+        """"dikalimantan utara" -> "di kalimantan utara", but only when what follows "di"/"ke" begins a
+        name we know; "dimana" and "kemarin" are left as they are."""
+        words = []
+        for word in text.split():
+            for preposition in ("di", "ke"):
+                rest = word[len(preposition):]
+                if word.startswith(preposition) and len(rest) >= 4 and rest in self._starts:
+                    words += [preposition, rest]
+                    break
+            else:
+                words.append(word)
+        return " ".join(words)
+
+    def _fuzzy(self, text: str) -> Resolution | None:
+        """A name written a letter or two wrong ("kalimantan tengh", "seruyann"), read as the one it is
+        nearest, or None. Two names equally near is ambiguous: a repair never chooses between them."""
+        words = text.split()
+        best: int | None = None
+        found: dict[Area, str] = {}
+        for size in (1, 2, 3):
+            for start in range(len(words) - size + 1):
+                phrase = " ".join(words[start : start + size])
+                if len(phrase) < 5:
+                    continue  # a short word is too likely to be an ordinary word
+                for norm, area in self._names:
+                    if norm[0] != phrase[0] or norm == phrase:
+                        continue  # a slip rarely changes the first letter
+                    distance = edit_distance(phrase, norm, allowed_distance(len(norm)))
+                    if distance is None:
+                        continue
+                    if best is None or distance < best:
+                        best, found = distance, {}
+                    if distance == best:
+                        found[area] = phrase
+        if not found:
+            return None
+        if len(found) > 1:
+            return Resolution("ambiguous", candidates=sorted(found, key=lambda a: a.name))
+        area, phrase = next(iter(found.items()))
+        return Resolution("one", area=area, read_as=(phrase[:40], area.name))
+
+    def nearest(self, phrase: str) -> str | None:
+        """The one known name nearest a phrase we could not read, to offer as a suggestion, or None."""
+        phrase = normalize(phrase)
+        if len(phrase) < 5:
+            return None
+        limit = max(2, len(phrase) // 3)
+        best: int | None = None
+        names: set[str] = set()
+        for norm, area in self._names:
+            if norm[0] != phrase[0]:
+                continue
+            distance = edit_distance(phrase, norm, limit)
+            if distance is None:
+                continue
+            if best is None or distance < best:
+                best, names = distance, set()
+            if distance == best:
+                names.add(area.name)
+        return next(iter(names)) if len(names) == 1 else None
+
     def resolve(self, message: str) -> Resolution:
-        text = f" {normalize(message)} "
+        text = f" {self._split_stuck_prepositions(normalize(message))} "
 
         # 1. A full name (or alias) written out, preferring the longest one.
         found = {}
@@ -141,9 +214,15 @@ class PlaceIndex:
                 return Resolution("one", area=ordered[0])
             return Resolution("ambiguous", candidates=ordered)
 
-        # 3. Something that looks like a place, but is not one we know.
+        # 3. A name written a letter or two wrong.
+        repaired = self._fuzzy(text)
+        if repaired is not None:
+            return repaired
+
+        # 4. Something that looks like a place, but is not one we know.
         for match in PLACE_AFTER.finditer(text):
             first = match.group(1).split()[0]
             if first not in NOT_PLACE_WORDS and not first.isdigit():
-                return Resolution("unknown", unknown_phrase=match.group(1).title())
+                phrase = match.group(1)
+                return Resolution("unknown", unknown_phrase=phrase.title(), suggestion=self.nearest(phrase))
         return Resolution("none")

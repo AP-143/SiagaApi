@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   type Area,
@@ -19,11 +19,12 @@ import { useLayerData } from "./layers";
 import Legend from "./Legend";
 import LayersPanel from "./LayersPanel";
 import MapView from "./map/MapView";
-import { usePanels } from "./panels";
+import { useDismissPopovers, usePanels } from "./panels";
 import RegencyPanel from "./RegencyPanel";
 import { formatSatelliteDate, latestSatelliteDate } from "./satellite";
 import StatusBar, { type FreshnessState } from "./StatusBar";
-import { useTheme } from "./theme";
+import { useDarkTheme } from "./theme";
+import { useStatusHeight } from "./useStatusHeight";
 import { LAYER_INFO, type MapViewState, parseView, viewToParams } from "./view";
 
 // A page left open for hours must keep up with the 30-minute ingestion.
@@ -45,10 +46,17 @@ export default function App() {
   const [summary, setSummary] = useState<SummaryState>({ rows: null, failed: false, key: "" });
   const [freshness, setFreshness] = useState<FreshnessState>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  // "Tampilkan di peta" asks the map to move to wherever the answer's Hotspots turn out to be, once
+  // they have been fetched; `focus` counts those requests.
+  const pendingFocus = useRef(false);
+  const [focus, setFocus] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshTick, setRefreshTick] = useState(0);
   const panels = usePanels();
-  const { theme, toggle: toggleTheme } = useTheme();
+  useDismissPopovers(Object.values(panels.open).some(Boolean), panels.closeAll);
+  useDarkTheme();
+  const page = useRef<HTMLElement>(null);
+  useStatusHeight(page);
   const layers = useLayerData(view.layers);
   // Fixed for the visit, so the imagery and the date shown beside it can never disagree.
   const satelliteDate = useMemo(() => latestSatelliteDate(), []);
@@ -102,12 +110,17 @@ export default function App() {
         setHotspots(collection.features);
         setLoading(false);
         setLoadFailed(false);
+        if (pendingFocus.current) {
+          pendingFocus.current = false;
+          setFocus((count) => count + 1);
+        }
       },
       () => {
         // Keep the last known Hotspots on screen, but say they may be out of date.
         if (cancelled) return;
         setLoadFailed(true);
         setLoading(false);
+        pendingFocus.current = false;
       },
     );
     return () => {
@@ -145,16 +158,17 @@ export default function App() {
   }, [refreshTick]);
 
   return (
-    <main className="app">
+    <main className="app" ref={page}>
+      <div className="grain" aria-hidden="true" />
       <MapView
         hotspots={hotspots}
-        theme={theme}
         view={view}
         layerData={layers.data}
         satelliteDate={satelliteDate}
+        focus={focus}
       />
       <div className="overlay overlay-top sheet">
-        <Brand theme={theme} onToggleTheme={toggleTheme} />
+        <Brand />
         <FilterPanel
           filters={filters}
           provinces={provinces}
@@ -172,7 +186,6 @@ export default function App() {
         />
       </div>
       <div className="overlay overlay-bottom">
-        <Legend view={view} />
         <StatusBar
           freshness={freshness}
           loadFailed={loadFailed}
@@ -183,21 +196,24 @@ export default function App() {
           )}
         />
         <div className="sheet">
-          <ChatPanel
-            open={panels.open.chat}
-            onToggle={() => panels.toggle("chat")}
-            onShowOnMap={(view) => {
-              setFilters(view);
-              panels.closeOnPhone();
-            }}
-          />
           <RegencyPanel
             counts={summary.rows}
             failed={summary.failed}
             open={panels.open.summary}
             onToggle={() => panels.toggle("summary")}
           />
+          <Legend view={view} open={panels.open.legend} onToggle={() => panels.toggle("legend")} />
+          <ChatPanel
+            open={panels.open.chat}
+            onToggle={() => panels.toggle("chat")}
+            onShowOnMap={(view) => {
+              pendingFocus.current = true;
+              setFilters(view);
+              panels.closeOnPhone();
+            }}
+          />
         </div>
+        {/* After the bar in the page; drawn in the corner. */}
         <Credits />
       </div>
     </main>

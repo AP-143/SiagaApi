@@ -1,9 +1,12 @@
+import { m, useReducedMotion } from "motion/react";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { useChat } from "./chat";
+import ChipRow from "./ChipRow";
 import Collapsible from "./Collapsible";
 import type { Filters } from "./filters";
-import { ChatIcon } from "./icons";
+import { ChatIcon, MapPinIcon, SendIcon } from "./icons";
+import MotionFeatures from "./MotionFeatures";
 
 const MAX_LENGTH = 500; // what the server accepts
 
@@ -19,6 +22,15 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
   const { messages, busy, aiOn, ask } = useChat();
   const [draft, setDraft] = useState("");
   const logRef = useRef<HTMLDivElement>(null);
+  // A new message fades in and rises a little; with reduced motion it is simply there.
+  const reduced = useReducedMotion();
+  const ARRIVE = reduced
+    ? {}
+    : {
+        initial: { opacity: 0, y: 8 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.2, ease: [0.2, 0.7, 0.2, 1] as const },
+      };
 
   // Once a conversation is under way: a question just sent goes to the bottom, with the wait under
   // it; an answer is read from its first line, so the log goes to the top of the answer rather than
@@ -55,11 +67,17 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
   const last = messages[messages.length - 1];
 
   return (
+    <MotionFeatures>
     <section className="card chat-panel">
-      <Collapsible label="Tanya" icon={<ChatIcon />} open={open} onToggle={onToggle}>
+      <Collapsible label="Tanya" title="Tanya" icon={<ChatIcon />} open={open} onToggle={onToggle}>
         <div className="chat-log" role="log" aria-label="Percakapan" aria-live="polite" ref={logRef}>
           {messages.map((message) => (
-            <div key={message.id} data-message-id={message.id} className={`chat-message chat-${message.role}`}>
+            <m.div
+              key={message.id}
+              data-message-id={message.id}
+              className={`chat-message chat-${message.role}`}
+              {...ARRIVE}
+            >
               {/* Plain text only: an answer can never become markup, and line breaks are kept. */}
               <p style={{ whiteSpace: "pre-line" }}>{message.text}</p>
               {message.ranking && (
@@ -85,7 +103,8 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   </blockquote>
                 </>
               )}
-              {(message.sourceNote || message.sourceLinks?.length) && (
+              {/* A boolean, not a number: `0 && ...` would draw a "0" on the screen. */}
+              {Boolean(message.sourceNote || message.sourceLinks?.length) && (
                 <p className="source-note">
                   {message.sourceNote}
                   {message.sourceLinks?.map((href) => (
@@ -100,25 +119,23 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   Mode sederhana: asisten AI sedang tidak tersedia, jadi jawaban ini dari aturan baku.
                 </p>
               )}
+              {message.readingNote && <p className="reading-note">{message.readingNote}</p>}
               {message.view && (
-                <button
-                  type="button"
-                  className="chip-button map-button"
-                  onClick={() => onShowOnMap(message.view!)}
-                >
+                <button type="button" className="map-button" onClick={() => onShowOnMap(message.view!)}>
+                  <MapPinIcon />
                   Tampilkan di peta
                 </button>
               )}
-            </div>
+            </m.div>
           ))}
           {busy && (
-            <div className="chat-message chat-assistant chat-typing">
+            <m.div className="chat-message chat-assistant chat-typing" {...ARRIVE}>
               <p>Sedang menjawab…</p>
-            </div>
+            </m.div>
           )}
           {/* Follow-up choices belong to the conversation, right after the message they answer. */}
           {last.role === "assistant" && !busy && (
-            <div className="chat-chips">
+            <ChipRow>
               {last.choices?.map((choice) => (
                 <button
                   key={choice.label}
@@ -139,7 +156,7 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   {suggestion}
                 </button>
               ))}
-            </div>
+            </ChipRow>
           )}
         </div>
 
@@ -156,20 +173,22 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={onKeyDown}
           />
-          <button type="submit" className="send-button" disabled={!canSend}>
-            Kirim
+          <button type="submit" className="send-button" aria-label="Kirim" title="Kirim" disabled={!canSend}>
+            <SendIcon />
           </button>
         </form>
 
-        <p className="chat-note">
-          Titik api adalah deteksi satelit, belum tentu kebakaran.
-        </p>
-        {aiOn && (
-          <p className="chat-privacy">
-            Pertanyaan diproses layanan AI pihak ketiga. Jangan menulis data pribadi.
-          </p>
-        )}
+        {/* Both notes flow as one small paragraph. */}
+        <div className="chat-notes">
+          <p className="chat-note">Titik api adalah deteksi satelit, belum tentu kebakaran.</p>
+          {aiOn && (
+            <p className="chat-privacy">
+              Pertanyaan diproses layanan AI pihak ketiga. Jangan menulis data pribadi.
+            </p>
+          )}
+        </div>
       </Collapsible>
     </section>
+    </MotionFeatures>
   );
 }

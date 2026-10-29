@@ -230,3 +230,55 @@ def test_without_the_embedding_model_the_chat_still_answers_by_words(real_knowle
     assert reply["kind"] == "knowledge"
     assert reply["data"]["sources"][0]["heading"] == "Mengapa kebakaran gambut sulit dipadamkan?"
     assert synonym["kind"] == "unsupported"  # words alone cannot find it, and nothing broke trying
+
+
+# ---- Typed without spaces, or with slips ------------------------------------------------------------
+
+
+def test_a_term_question_typed_without_spaces_is_answered_like_the_spaced_one(real_knowledge):
+    spaced = ask(real_knowledge, "apa itu hotspot")
+    reply = ask(real_knowledge, "apaituhotspot")
+
+    assert reply["kind"] == "knowledge", reply
+    assert reply["data"]["sources"][0]["heading"] == spaced["data"]["sources"][0]["heading"]
+    assert reply["data"]["read_as"]["typed"] == "apaituhotspot"
+
+
+@pytest.mark.parametrize(
+    "typed, correct",
+    [
+        ("gmbut itu apa", "gambut itu apa"),
+        ("apakah gambut bisa terbakar sndiri", "apakah gambut bisa terbakar sendiri"),
+        ("apa itu hotspt", "apa itu hotspot"),
+        ("apakh anak bleh pakai maskr saat asap", "apakah anak boleh pakai masker saat asap"),
+    ],
+)
+def test_a_misspelled_question_about_a_term_is_answered_by_the_same_passage(real_knowledge, typed, correct):
+    expected = ask(real_knowledge, correct)
+    reply = ask(real_knowledge, typed)
+
+    assert expected["kind"] == "knowledge", expected
+    assert reply["kind"] == "knowledge", reply
+    assert reply["data"]["sources"][0]["heading"] == expected["data"]["sources"][0]["heading"]
+
+
+def test_a_misspelled_term_question_says_how_it_was_read(real_knowledge):
+    reply = ask(real_knowledge, "gmbut itu apa")
+
+    assert reply["data"]["read_as"] == {"typed": "gmbut", "as": "gambut"}
+    assert reply["answer"].endswith("Saya membaca 'gmbut' sebagai gambut.")
+
+
+def test_a_misspelled_health_question_still_gets_the_quotation_word_for_word(real_knowledge):
+    expected = ask(real_knowledge, "apakah anak boleh pakai masker saat asap")
+    reply = ask(real_knowledge, "apakh anak boleh pakai maskr saat asap")
+
+    quoted = reply["answer"].split("\n\nSaya membaca")[0]
+    assert reply["kind"] == "knowledge"
+    assert quoted == expected["answer"]  # the reviewed text, unchanged, and nothing written by a model
+
+
+def test_a_misspelled_question_the_documents_do_not_cover_is_still_turned_away(real_knowledge):
+    for question in ["bgaimana cara mmbuat kue brownies", "sipa presiden indonesia skarang"]:
+        reply = ask(real_knowledge, question)
+        assert reply["kind"] == "unsupported", (question, reply)

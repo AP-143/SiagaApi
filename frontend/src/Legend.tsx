@@ -1,28 +1,19 @@
-import { useState } from "react";
-
-import { ChevronIcon } from "./icons";
-import { isNarrowViewport } from "./viewport";
+import Collapsible from "./Collapsible";
+import { KeyIcon } from "./icons";
 import type { MapViewState } from "./view";
 
-type Props = { view: MapViewState };
+type Props = { view: MapViewState; open: boolean; onToggle: () => void };
 
 /**
- * Explains what is drawn: always the Hotspot colors, plus each layer that is switched on. It belongs
- * to the map rather than to a panel, so it is still there when the filters are folded away. A wide
- * screen starts with it open along the bottom of the map; a narrow one starts with just its title.
+ * Explains what is drawn: always the Hotspot colors, plus each layer that is switched on. It is one
+ * of the panels of the bottom bar, so it opens as a sheet like the others, and it belongs to the map
+ * rather than to the filters: it is still there whichever other panel was used last.
  */
-export default function Legend({ view }: Props) {
-  const [open, setOpen] = useState(() => !isNarrowViewport());
+export default function Legend({ view, open, onToggle }: Props) {
   return (
-    <section className="legend" aria-label="Keterangan">
-      <button type="button" className="legend-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span>Keterangan</span>
-        <span className="chevron">
-          <ChevronIcon />
-        </span>
-      </button>
-      {open && (
-        <ul>
+    <section className="card legend-panel" aria-label="Keterangan">
+      <Collapsible label="Keterangan" icon={<KeyIcon />} open={open} onToggle={onToggle}>
+        <ul className="legend-list">
           <li>
             <span className="swatch swatch-other" aria-hidden="true" /> Titik jingga: bukan di lahan gambut
           </li>
@@ -47,7 +38,7 @@ export default function Legend({ view }: Props) {
             </li>
           )}
         </ul>
-      )}
+      </Collapsible>
     </section>
   );
 }

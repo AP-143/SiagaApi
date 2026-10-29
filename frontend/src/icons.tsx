@@ -22,22 +22,59 @@ function Icon({ children, size = 18 }: { children: ReactNode; size?: number }) {
   );
 }
 
+/** Corner brackets: "show everything". */
+export const FrameIcon = () => (
+  <Icon size={20}>
+    <path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" />
+  </Icon>
+);
+
+/** A circled "i": information. */
+export const InfoIcon = () => (
+  <Icon size={16}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5M12 8h.01" />
+  </Icon>
+);
+
+/** An arrow pointing up and to the right: send. */
+export const SendIcon = () => (
+  <Icon size={18}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </Icon>
+);
+
+/** Two overlapping dots, like the Hotspot marks a map key explains. */
+export const KeyIcon = () => (
+  <Icon>
+    <circle cx="9" cy="9" r="4.5" />
+    <circle cx="15.5" cy="15.5" r="4.5" />
+  </Icon>
+);
+
+export const PlusIcon = () => (
+  <Icon size={20}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+);
+
+export const MinusIcon = () => (
+  <Icon size={20}>
+    <path d="M5 12h14" />
+  </Icon>
+);
+
+/** A map pin: "show this on the map". */
+export const MapPinIcon = () => (
+  <Icon size={16}>
+    <path d="M12 21s-6.5-5.6-6.5-10.5a6.5 6.5 0 1 1 13 0C18.5 15.4 12 21 12 21Z" />
+    <circle cx="12" cy="10.5" r="2.3" />
+  </Icon>
+);
+
 export const ChevronIcon = () => (
   <Icon size={16}>
     <path d="m6 9 6 6 6-6" />
-  </Icon>
-);
-
-export const SunIcon = () => (
-  <Icon>
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-  </Icon>
-);
-
-export const MoonIcon = () => (
-  <Icon>
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
   </Icon>
 );
 

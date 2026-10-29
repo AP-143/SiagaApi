@@ -111,6 +111,22 @@ export class FakeMap {
   remove() {}
   resize() {}
 
+  zoomCalls: Array<"in" | "out"> = [];
+  zoomIn() {
+    this.zoomCalls.push("in");
+    return this;
+  }
+  zoomOut() {
+    this.zoomCalls.push("out");
+    return this;
+  }
+
+  fitBoundsCalls: Array<{ bounds: unknown; options: Record<string, any> }> = [];
+  fitBounds(bounds: unknown, options: Record<string, any> = {}) {
+    this.fitBoundsCalls.push({ bounds, options });
+    return this;
+  }
+
   /** Simulate a user tapping a drawn Hotspot, the way MapLibre reports it. */
   tap(layerId: string, id: number, lngLat: [number, number]) {
     for (const entry of this.handlers) {

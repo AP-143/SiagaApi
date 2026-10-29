@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from app.chat.places import Area, PlaceIndex, Resolution, normalize
+from app.chat.repair import repair_question
 from app.queries import TIME_WINDOWS
 
 FRESHNESS = re.compile(r"\b(diperbarui|diperbaharui|pembaruan|update|segar|usang|kedaluwarsa|kadaluarsa)\b")
@@ -88,6 +89,11 @@ class Question:
     scope: Scope = field(default_factory=Scope)
     candidates: list[Area] | None = None
     unknown_phrase: str | None = None
+    suggestion: str | None = None
+    # A place that was misspelled: (what was typed, the name it was read as); shown to the person.
+    read_as: tuple[str, str] | None = None
+    # Every repair made to the question (spelling and place), for the reading note.
+    readings: list[tuple[str, str]] = field(default_factory=list)
     ranking_unit: RankingUnit = RankingUnit.REGENCY
 
 
@@ -118,8 +124,51 @@ def asks_for_a_period_the_map_lacks(message: str) -> bool:
     return _window(normalize(message)) is None
 
 
+def words_scope(text: str) -> tuple[str | None, bool, bool]:
+    """The period, peat and low-confidence filters that a normalised question asks for in its own words.
+
+    The period is None when it names one the map lacks. Read from the words, so a rewrite of the question
+    (by code or by a model) can be held to what the person actually wrote.
+    """
+    return _window(text), bool(PEAT.search(text)), bool(LOW_CONFIDENCE.search(text))
+
+
+# What a repaired reading may turn a question into: a number, a ranking, or the freshness of the data.
+# Never a different kind of question: "berada" is an ordinary word one letter from "berapa".
+REPAIRABLE_INTENTS = {Intent.COUNT, Intent.RANKING, Intent.FRESHNESS}
+
+
+def asks_for_an_explanation(text: str) -> bool:
+    """True when a normalised question has a word that asks for an explanation (not for a number)."""
+    return bool(STRONG_EXPLAIN_WORD.search(text) or EXPLAIN_WORD.search(text))
+
+
+def _same_question(a: Question, b: Question) -> bool:
+    return (a.intent, a.scope, a.ranking_unit) == (b.intent, b.scope, b.ranking_unit)
+
+
 def understand(message: str, places: PlaceIndex) -> Question:
+    """Read a question as it was typed, and only if that differs from a spelling repair read it again.
+
+    The repaired reading is used only when it is a question about numbers (see REPAIRABLE_INTENTS), when
+    the person did not ask for an explanation (a question about a term is never bent into a count by a
+    repair), and when it reads differently from the original. Otherwise the question stays as typed.
+    """
     text = normalize(message)
+    original = _read(text, places)
+    original.readings = [original.read_as] if original.read_as else []
+
+    repair = repair_question(text, places.words)
+    if not repair.readings or asks_for_an_explanation(text):
+        return original
+    repaired = _read(repair.text, places)
+    if repaired.intent not in REPAIRABLE_INTENTS or _same_question(original, repaired):
+        return original
+    repaired.readings = [*repair.readings, *([repaired.read_as] if repaired.read_as else [])]
+    return repaired
+
+
+def _read(text: str, places: PlaceIndex) -> Question:
     if GREETING.fullmatch(text):
         return Question(Intent.GREETING)
 
@@ -143,11 +192,13 @@ def understand(message: str, places: PlaceIndex) -> Question:
     if window is None:
         return Question(Intent.UNSUPPORTED_WINDOW)
 
-    resolution: Resolution = places.resolve(message)
+    resolution: Resolution = places.resolve(text)
     if resolution.kind == "ambiguous":
         return Question(Intent.CLARIFY, candidates=resolution.candidates)
     if resolution.kind == "unknown":
-        return Question(Intent.UNKNOWN_PLACE, unknown_phrase=resolution.unknown_phrase)
+        return Question(
+            Intent.UNKNOWN_PLACE, unknown_phrase=resolution.unknown_phrase, suggestion=resolution.suggestion
+        )
 
     scope = Scope(
         area=resolution.area,
@@ -157,5 +208,5 @@ def understand(message: str, places: PlaceIndex) -> Question:
     )
     if RANKING.search(text) and not (resolution.area and resolution.area.type == "regency"):
         unit = RankingUnit.PROVINCE if PROVINCE_WORD.search(text) else RankingUnit.REGENCY
-        return Question(Intent.RANKING, scope=scope, ranking_unit=unit)
-    return Question(Intent.COUNT, scope=scope)
+        return Question(Intent.RANKING, scope=scope, ranking_unit=unit, read_as=resolution.read_as)
+    return Question(Intent.COUNT, scope=scope, read_as=resolution.read_as)

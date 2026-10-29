@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import cache as remembered
 
 import psycopg
 
@@ -6,10 +7,20 @@ from app import queries
 from app.chat import answers
 from app.chat.explain import ExplanationCache, grounded_explanation
 from app.chat.model import ModelClient, ModelUnavailable
-from app.chat.model_intent import question_from_model, rewrite_follow_up
-from app.chat.places import PlaceIndex
-from app.chat.understanding import Intent, Question, RankingUnit, Scope, asks_for_a_period_the_map_lacks, understand
-from app.knowledge import Passage, is_too_short_to_stand_alone, search_knowledge
+from app.chat.model_intent import could_be_a_quantity, question_from_model, rewrite_follow_up
+from app.chat.model_repair import keeps_the_question, repaired_by_model
+from app.chat.places import PlaceIndex, normalize
+from app.chat.repair import looks_damaged, repair_question, repair_words
+from app.chat.understanding import (
+    Intent,
+    Question,
+    RankingUnit,
+    Scope,
+    asks_for_a_period_the_map_lacks,
+    asks_for_an_explanation,
+    understand,
+)
+from app.knowledge import Passage, document_words, is_too_short_to_stand_alone, search_knowledge
 
 
 def _filters(scope: Scope, now: datetime) -> tuple[str, list]:
@@ -92,14 +103,75 @@ def _from_rules_or_documents(
     places: PlaceIndex,
     model: ModelClient | None,
     cache: ExplanationCache,
+    question: Question | None = None,
 ) -> dict | None:
-    """What the rules and the reviewed documents can answer; the model only words an explanation."""
-    reply = _answer_understood(conn, understand(message, places), now)
+    """What the rules and the reviewed documents can answer; the model only words an explanation.
+
+    `question` is the message already read, when the caller has done that."""
+    reply = _answer_understood(conn, question or understand(message, places), now)
     if reply is not None:
         return reply
     # Not a question about the numbers: it may be one the reviewed documents can answer.
     passages = search_knowledge(conn, message)
     return _explain(message, passages, places, model, cache) if passages else None
+
+
+def _asks_for_an_explanation(typed: str, places: PlaceIndex) -> bool:
+    """True when a normalised question asks for an explanation, even if the asking word is misspelled."""
+    return asks_for_an_explanation(typed) or asks_for_an_explanation(repair_words(typed, places.words).text)
+
+
+def _read_again_repaired(
+    conn: psycopg.Connection,
+    message: str,
+    now: datetime,
+    places: PlaceIndex,
+    model: ModelClient | None,
+    cache: ExplanationCache,
+) -> dict | None:
+    """The reply for the question with its spelling and spacing repaired, or None when repair changed nothing
+    or the repaired question is not one we can answer either."""
+    if _asks_for_an_explanation(normalize(message), places):
+        return None  # a question about a term was already repaired for the documents; never read as a count
+    repair = repair_question(normalize(message), places.words)
+    if not repair.readings:
+        return None
+    reply = _from_rules_or_documents(conn, repair.text, now, places, model, cache)
+    if reply is None or reply.get("kind") in ("unsupported", "unsupported_window"):
+        return None
+    return _with_reading_note(reply, repair.readings)
+
+
+def _read_again_by_model(
+    conn: psycopg.Connection,
+    message: str,
+    now: datetime,
+    places: PlaceIndex,
+    model: ModelClient,
+    cache: ExplanationCache,
+    document_words: frozenset[str],
+) -> dict | None:
+    """The reply for the question as the model rewrote it with spelling and spacing fixed, read by the rules.
+
+    None when the model changed nothing, the rewrite failed a check, or the rules cannot read it either.
+    Raises ModelUnavailable when the model failed. The model's text is never shown as an answer.
+    """
+    rewrite = repaired_by_model(model, message, places, cache, document_words)
+    if rewrite is None:
+        return None
+    question = understand(rewrite, places)
+    if question.intent not in (Intent.COUNT, Intent.RANKING, Intent.FRESHNESS, Intent.UNSUPPORTED):
+        return None  # a rewrite may be read as a number or as a term to explain, never as a place to settle
+    if question.intent is not Intent.UNSUPPORTED:
+        # The same guard as for every other way into a number: the person's own words decide the period.
+        if asks_for_a_period_the_map_lacks(repair_question(normalize(message), places.words).text):
+            return answers.unsupported_window_reply()
+        if question.intent in (Intent.COUNT, Intent.RANKING) and not keeps_the_question(message, question, places):
+            return None  # the model added or dropped a place, or changed the period or a filter
+    reply = _from_rules_or_documents(conn, rewrite, now, places, model, cache, question)
+    if reply is None or reply.get("kind") in ("unsupported", "unsupported_window"):
+        return None
+    return _with_reading_note(reply, [(normalize(message)[:120], rewrite[:160])])
 
 
 def answer_question(
@@ -124,12 +196,29 @@ def answer_question(
     # Not a question about the numbers: it may be one the reviewed documents can answer. But after
     # earlier turns a very short question ("bagaimana dengan Kalimantan Barat?") is most likely a
     # follow-up, and a passage that happens to share its few words is a guess, so it is read as one first.
-    passages = search_knowledge(conn, message)
+    # A question about a term is first repaired with the words of the documents ("maskr" -> "masker"),
+    # so that a slip does not hide the passage; the repaired text is what is searched, and the reply
+    # says how it was read. A question with nothing to repair is searched as typed.
+    typed = normalize(message)
+    # The vocabulary of the documents is looked up at most once for a question, and only if it is needed.
+    vocabulary = remembered(lambda: document_words(conn))
+    explanation = _asks_for_an_explanation(typed, places)
+    repair = repair_question(typed, places.words, vocabulary()) if explanation else None
+    readings = repair.readings if repair is not None else []
+    query = repair.text if readings and repair is not None else message
+    passages = search_knowledge(conn, query)
     # Only a fragment is read as a follow-up: a complete question about something else must not be bent,
     # with the context of earlier turns, into one that the documents happen to answer.
     follow_up = model is not None and bool(history) and is_too_short_to_stand_alone(conn, message)
     if passages and not follow_up:
-        return _explain(message, passages, places, model, cache)
+        return _with_reading_note(_explain(query, passages, places, model, cache), readings)
+
+    # Nothing yet: perhaps it was typed without spaces. Read it again, repaired from our own
+    # vocabulary, by the rules and by the documents, and say how it was read.
+    if not passages:
+        repaired = _read_again_repaired(conn, message, now, places, model, cache)
+        if repaired is not None:
+            return repaired
     if model is None:
         return answers.unsupported_reply()
 
@@ -146,6 +235,17 @@ def answer_question(
                 return reply
             message = rewritten
         proposed = question_from_model(model, message, places)
+        if (
+            proposed is None
+            and not could_be_a_quantity(normalize(message))
+            and looks_damaged(normalize(message), places.words, vocabulary())
+        ):
+            # The model was not even asked what this means (it is not about fire as a quantity), and the
+            # rules and the code repair could not read it, yet it looks badly spelled or spaced: the model
+            # may fix that. A well-written question about something else is not sent.
+            repaired = _read_again_by_model(conn, message, now, places, model, cache, vocabulary())
+            if repaired is not None:
+                return repaired
     except ModelUnavailable:
         # The chat still works without the model; it only says so.
         if passages:
@@ -157,21 +257,34 @@ def answer_question(
     return answers.unsupported_reply()
 
 
+def _with_reading_note(reply: dict, readings: list[tuple[str, str]]) -> dict:
+    """Say how a misspelled word or place was read: plain text after the answer, and in the data."""
+    if not readings:
+        return reply
+    note = " ".join(f"Saya membaca '{typed}' sebagai {read}." for typed, read in readings)
+    as_data = [{"typed": typed, "as": read} for typed, read in readings]
+    return {
+        **reply,
+        "answer": f"{reply['answer']}\n\n{note}",
+        "data": {**reply["data"], "read_as": as_data[0], "readings": as_data},
+    }
+
+
 def _answer_understood(conn: psycopg.Connection, question: Question, now: datetime) -> dict | None:
     """The reply for a question we know how to answer from the database, else None."""
     match question.intent:
         case Intent.COUNT:
-            return _count(conn, question, now)
+            return _with_reading_note(_count(conn, question, now), question.readings)
         case Intent.RANKING:
-            return _ranking(conn, question, now)
+            return _with_reading_note(_ranking(conn, question, now), question.readings)
         case Intent.FRESHNESS:
-            return answers.freshness_reply(queries.freshness(conn, now))
+            return _with_reading_note(answers.freshness_reply(queries.freshness(conn, now)), question.readings)
         case Intent.GREETING:
             return answers.greeting_reply()
         case Intent.CLARIFY:
             return answers.clarify_reply(question.candidates or [])
         case Intent.UNKNOWN_PLACE:
-            return answers.unknown_place_reply(question.unknown_phrase)
+            return answers.unknown_place_reply(question.unknown_phrase, question.suggestion)
         case Intent.UNSUPPORTED_WINDOW:
             return answers.unsupported_window_reply()
     return None

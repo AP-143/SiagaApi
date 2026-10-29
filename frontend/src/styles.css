@@ -1,76 +1,38 @@
 /* ---------------------------------------------------------------------------------------------
-   Design tokens. Light is the default; the dark values apply when <html data-theme="dark">.
-   Text colors are chosen for at least 4.5:1 contrast on their card background.
+   Design tokens. The map is dark only: a deep brown-plum "night ink". Text colors are chosen for at
+   least 4.5:1 contrast on their card background. Orange and purple are kept for data (a Hotspot,
+   peat) and are never used to decorate the interface.
    --------------------------------------------------------------------------------------------- */
 :root {
-  color-scheme: light;
-
-  /* Barlow reads like signage and instrument panels; its semi-condensed cut keeps numbers and
-     titles compact in a narrow column. Body text is the regular width. */
-  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
-
-  --panel: #f7f8f9;
-  --card: rgba(247, 248, 249, 0.92);
-  --card-solid: #ffffff;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --border: rgba(15, 23, 42, 0.12);
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.1), 0 8px 20px rgba(15, 23, 42, 0.14);
-
-  --field-bg: #ffffff;
-  --track-off: #cbd5e1;
-  --segment-bg: rgba(15, 23, 42, 0.07);
-  /* The interface itself is smoke-blue ink. Orange and purple are kept for data (a Hotspot, peat), so
-     nothing in the chrome competes with the points on the map. */
-  --button-bg: #243441;
-  --button-text: #ffffff;
-
-  --accent: #243441;
-  --accent-strong: #243441;
-  --accent-soft: rgba(36, 52, 65, 0.09);
-  --ember: #ea580c;
-  --ember-strong: #c2410c; /* ember used for text: 5.2:1 on white */
-  --ember-soft: rgba(234, 88, 12, 0.12);
-  --peat: #a855f7;
-  --peat-strong: #7e22ce;
-  --peat-soft: rgba(168, 85, 247, 0.14);
-
-  --good: #15803d;
-  --warn-bg: #fef3c7;
-  --warn-text: #78350f;
-  --warn-border: #f59e0b;
-
-  --focus: #2563eb;
-  --map-bg: #e5e7eb;
-  --logo-tile: #0f172a;
-  --logo-edge: transparent;
-
-  --radius-card: 10px;
-  --radius-control: 6px;
-  --gap: 8px;
-}
-
-:root[data-theme="dark"] {
   color-scheme: dark;
 
-  --panel: #151c23;
-  --card: rgba(21, 28, 35, 0.92);
-  --card-solid: #1d2630;
-  --text: #f1f5f9;
-  --text-muted: #a9b4c6;
-  --border: rgba(255, 255, 255, 0.14);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.45);
+  /* Inter for everything small. Bodoni Moda is only for large display text (see landing.css and
+     the map's big titles); it is too thin to read at panel sizes on a phone in the field. */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-sans);
+  /* The wordmark and the Landing's big headings. Optical size is pinned wherever it is used. */
+  --font-wordmark: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
 
-  --field-bg: #111827;
-  --track-off: #475569;
-  --segment-bg: rgba(255, 255, 255, 0.08);
-  --button-bg: #dbe5ec;
-  --button-text: #0f1a22;
+  /* Night ink: a deep brown-plum, with paper-coloured text. */
+  --panel: #261a1d;
+  --card: rgba(38, 26, 29, 0.94);
+  --card-solid: #302125;
+  --text: #f1e8d6;
+  --text-muted: #c2b3a2;
+  --border: rgba(236, 227, 209, 0.16);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 22px rgba(0, 0, 0, 0.45);
 
-  --accent: #dbe5ec;
-  --accent-strong: #dbe5ec;
-  --accent-soft: rgba(219, 229, 236, 0.12);
+  --field-bg: #1b1214;
+  --track-off: #5b4a47;
+  --segment-bg: rgba(236, 227, 209, 0.08);
+  /* The interface itself is paper on ink. Orange and purple are kept for data (a Hotspot, peat), so
+     nothing in the chrome competes with the points on the map. */
+  --button-bg: #ece3d1;
+  --button-text: #2a191c;
+
+  --accent: #ece3d1;
+  --accent-strong: #ece3d1;
+  --accent-soft: rgba(236, 227, 209, 0.12);
   --ember: #fb923c;
   --ember-strong: #fdba74;
   --ember-soft: rgba(251, 146, 60, 0.16);
@@ -79,14 +41,23 @@
   --peat-soft: rgba(192, 132, 252, 0.18);
 
   --good: #4ade80;
-  --warn-bg: #451a03;
+  --warn-bg: #3d230a;
   --warn-text: #fde68a;
   --warn-border: #b45309;
 
   --focus: #93c5fd;
-  --map-bg: #0b1220;
-  --logo-tile: #0f172a;
-  --logo-edge: rgba(255, 255, 255, 0.28); /* the dark tile would otherwise melt into a dark card */
+  --map-bg: #1a1214;
+
+  /* Small caps labels: a warm rust, lifted for the dark ground (about 8:1). */
+  --rust-text: #dba37d;
+  --grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.26 0 0 0 0 0.16 0 0 0 0 0.16 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* The same noise in paper colour, for the dark map. */
+  --grain-image-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.93 0 0 0 0 0.89 0 0 0 0 0.82 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  --radius-card: 6px;
+  --radius-control: 4px;
+  --gap: 8px;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -110,13 +81,15 @@ body {
   outline-offset: 2px;
 }
 
+/* `.app .map` (two classes) so MapLibre's own `.maplibregl-map { position: relative }` can never win,
+   whichever stylesheet loads last: the map is a lazy chunk, and its CSS arrives after this file. */
 .app,
-.map {
+.app .map {
   position: absolute;
   inset: 0;
 }
 
-.map {
+.app .map {
   background: var(--map-bg);
 }
 
@@ -219,34 +192,30 @@ body {
   padding: 10px 10px 10px 12px;
 }
 
+.brand-home {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-control);
+}
+
+.brand-home:hover .brand-text h1 {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+}
+
 .brand-mark {
   display: grid;
+  color: var(--text);
   flex: none;
   line-height: 0;
 }
 
-.logo-tile {
-  fill: var(--logo-tile);
-  stroke: var(--logo-edge);
-  stroke-width: 1;
-}
-
-.logo-hot {
-  fill: #fb923c;
-}
-
-.logo-spread {
-  fill: #fb923c;
-  fill-opacity: 0.5;
-}
-
-.logo-core {
-  fill: #fed7aa;
-}
-
-.logo-peat {
-  fill: #c084fc;
-}
 
 .brand-text {
   flex: 1;
@@ -255,16 +224,21 @@ body {
 
 .brand h1 {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 21px;
-  font-weight: 700;
+  font-family: var(--font-wordmark);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
+  font-size: 22px;
+  font-weight: 500;
   letter-spacing: 0.01em;
-  line-height: 1.2;
+  line-height: 1.05;
 }
 
 .brand p {
-  margin: 1px 0 0;
-  font-size: 13px;
+  margin: 3px 0 0;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
 
@@ -321,6 +295,13 @@ body {
   gap: 8px;
 }
 
+/* The base-map choice is a different kind of thing from the switches above it: set it apart. */
+.layers-form .field {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
 .status-bar,
 .credits,
 .brand {
@@ -335,10 +316,13 @@ body {
   min-height: 48px;
   padding: 0 14px;
   font: inherit;
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-family: var(--font-wordmark);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--text);
   text-align: left;
   background: none;
@@ -367,21 +351,9 @@ body {
   padding: 2px 14px 14px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  animation: fade-in 160ms ease-out;
 }
 
 
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 
 /* ---- Form controls -------------------------------------------------------------------------- */
 
@@ -396,11 +368,12 @@ body {
 }
 
 .field-label {
-  font-family: var(--font-display);
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--text-muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rust-text);
 }
 
 .field select {
@@ -449,7 +422,7 @@ body {
 .segment span {
   display: grid;
   place-items: center;
-  min-height: 40px;
+  min-height: 44px;
   font-size: 15px;
   font-weight: 500;
   color: var(--text-muted);
@@ -561,91 +534,15 @@ body {
   border-top: 1.5px dashed var(--text);
 }
 
-/* The legend is a card of its own. Narrow screens get it folded, in the stack of panels; a wide screen
-   gets it open as a strip along the bottom edge of the map, between the two sheets. */
-.legend {
-  font-size: 14px;
-  color: var(--text-muted);
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow);
-}
-
-.legend-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 14px;
-  font: inherit;
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--text);
-  text-align: left;
-  background: none;
-  border: 0;
-  border-radius: inherit;
-  cursor: pointer;
-}
-
-.legend-toggle .chevron {
-  display: grid;
-  margin-left: auto;
-  color: var(--text-muted);
-  transition: transform 200ms ease;
-}
-
-.legend-toggle[aria-expanded="true"] .chevron {
-  transform: rotate(180deg);
-}
-
-.legend ul {
+/* The legend's list, inside its sheet. */
+.legend-list {
   display: grid;
   gap: 6px;
   margin: 0;
-  padding: 2px 14px 12px;
+  padding: 0;
+  font-size: 14px;
+  color: var(--text-muted);
   list-style: none;
-}
-
-@media (min-width: 1000px) {
-  .legend {
-    position: fixed;
-    left: 50%;
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    display: flex;
-    align-items: center;
-    width: max-content;
-    /* clear of the left sheet and of the right column on either side */
-    max-width: max(260px, calc(100vw - 760px));
-    transform: translateX(-50%);
-  }
-
-  .legend-toggle {
-    flex: none;
-    width: auto;
-    padding-right: 12px;
-  }
-
-  .legend-toggle .chevron {
-    margin-left: 4px;
-    transform: rotate(-90deg);
-  }
-
-  .legend-toggle[aria-expanded="true"] .chevron {
-    transform: rotate(90deg);
-  }
-
-  .legend ul {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 18px;
-    padding: 8px 16px 8px 0;
-  }
 }
 
 .swatch {
@@ -753,10 +650,12 @@ body {
 /* ---- Summary -------------------------------------------------------------------------------- */
 
 .regency-panel h2 {
-  margin: 0 0 4px;
-  font-size: 13px;
+  margin: 0 0 8px;
+  font-size: 10.5px;
   font-weight: 600;
-  color: var(--text-muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rust-text);
 }
 
 .regency-panel .total {
@@ -771,9 +670,11 @@ body {
 
 .regency-panel .total strong {
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-wordmark);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
   font-size: 38px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
   line-height: 1.2;
   color: var(--text);
@@ -909,7 +810,7 @@ body {
 
 .chat-message p {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
@@ -924,13 +825,11 @@ body {
   padding: 7px 12px;
   color: var(--text);
   background: var(--accent-soft);
-  border-radius: 8px 8px 2px 8px;
+  border-radius: 14px 14px 4px 14px;
 }
 
 .chat-assistant {
   align-self: stretch;
-  padding-left: 12px;
-  border-left: 2px solid var(--track-off);
 }
 
 /* A ranking: place, name, and count in a column that lines up, instead of a sentence per row. */
@@ -987,31 +886,74 @@ body {
   font-style: italic;
 }
 
+/* Suggested questions are one row you can swipe through, not a stack of buttons. */
 .chat-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
-  margin-top: 2px;
+  margin: 2px -4px 0 0;
+  padding-bottom: 2px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  /* A slim scrollbar and a fading right edge tell you there is more to slide to. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--track-off) transparent;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
 }
 
 .chip-button {
-  min-height: 36px;
-  padding: 6px 12px;
+  flex: none;
+  min-height: 44px;
+  padding: 6px 14px;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.3;
   color: var(--text);
   text-align: left;
-  background: var(--card-solid);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  /* Lighter than the sheet and with a visible edge (3:1), so a chip does not melt into it. */
+  background: rgba(236, 227, 209, 0.1);
+  border: 1px solid rgba(236, 227, 209, 0.42);
+  border-radius: 999px;
   cursor: pointer;
   transition: border-color 150ms ease, background-color 150ms ease;
 }
 
 .chip-button:hover {
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background: rgba(236, 227, 209, 0.2);
+}
+
+/* "Tampilkan di peta" is an action, not a suggestion: a solid paper button with a pin, so it reads as
+   the thing to press and does not look like one more chip. */
+.map-button {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 0 18px 0 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--button-text);
+  background: var(--button-bg);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.map-button:hover {
+  background: #fff7e8;
+}
+
+.map-button svg {
+  flex: none;
 }
 
 .source-link {
@@ -1032,19 +974,21 @@ body {
   align-items: flex-end;
   gap: 8px;
   margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 
 .chat-form textarea {
   flex: 1;
   min-width: 0;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 11px 16px;
   font: inherit;
   font-size: 14px;
   color: var(--text);
   background: var(--field-bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-control);
+  border-radius: 22px;
   resize: none;
   /* One line to start; where the browser supports it, it grows with what is typed. */
   field-sizing: content;
@@ -1053,15 +997,15 @@ body {
 
 .send-button {
   flex: none;
-  min-width: 64px;
-  min-height: 44px;
-  padding: 0 16px;
-  font: inherit;
-  font-weight: 600;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   color: var(--button-text);
   background: var(--button-bg);
   border: 0;
-  border-radius: var(--radius-control);
+  border-radius: 50%;
   cursor: pointer;
 }
 
@@ -1073,7 +1017,7 @@ body {
 
 /* ---- Map popup and controls ----------------------------------------------------------------- */
 
-.maplibregl-popup-content {
+.app .maplibregl-popup-content {
   padding: 0;
   color: var(--text);
   background: var(--card-solid);
@@ -1083,35 +1027,35 @@ body {
   font-family: var(--font-sans);
 }
 
-.maplibregl-popup-anchor-top .maplibregl-popup-tip,
-.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
-.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+.app .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.app .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.app .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
   border-bottom-color: var(--card-solid);
 }
 
-.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
-.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
-.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+.app .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.app .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.app .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
   border-top-color: var(--card-solid);
 }
 
-.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+.app .maplibregl-popup-anchor-left .maplibregl-popup-tip {
   border-right-color: var(--card-solid);
 }
 
-.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+.app .maplibregl-popup-anchor-right .maplibregl-popup-tip {
   border-left-color: var(--card-solid);
 }
 
-.maplibregl-popup-close-button {
-  width: 36px;
-  height: 36px;
+.app .maplibregl-popup-close-button {
+  width: 44px;
+  height: 44px;
   font-size: 20px;
   color: var(--text-muted);
   border-radius: 0 14px 0 10px;
 }
 
-.maplibregl-popup-close-button:hover {
+.app .maplibregl-popup-close-button:hover {
   color: var(--text);
   background: var(--segment-bg);
 }
@@ -1182,37 +1126,8 @@ body {
   text-align: right;
 }
 
-.maplibregl-ctrl-group {
-  overflow: hidden;
-  background: var(--card-solid);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  box-shadow: var(--shadow);
-}
 
-.maplibregl-ctrl-group button {
-  width: 40px;
-  height: 40px;
-}
 
-.maplibregl-ctrl-group button + button {
-  border-top: 1px solid var(--border);
-}
-
-:root[data-theme="dark"] .maplibregl-ctrl-icon {
-  filter: invert(1);
-}
-
-.maplibregl-ctrl-attrib {
-  font-size: 11px;
-  color: var(--text-muted);
-  background: var(--card) !important;
-  border-radius: 8px 0 0 0;
-}
-
-.maplibregl-ctrl-attrib a {
-  color: var(--text-muted);
-}
 
 /* ---- Phones: the filters stay a small card on top and the rest becomes a bottom sheet ------- */
 
@@ -1242,17 +1157,13 @@ body {
     flex-wrap: wrap;
   }
 
-  /* While the chat is open it gets the room: the legend steps aside (it is back once the chat is
-     closed) and the stack may grow taller than usual. */
+  /* While the chat is open the stack may grow taller than usual. */
   .overlay-bottom:has(.chat-panel .panel-body) {
     /* what is left under the folded sheet at the top (name, Filter, Lapisan) */
     max-height: calc(100vh - 244px);
     max-height: calc(100dvh - 244px);
   }
 
-  .overlay-bottom:has(.chat-panel .panel-body) .legend {
-    display: none;
-  }
 
 
 
@@ -1334,4 +1245,492 @@ body {
   line-height: 1.5;
   color: var(--text-muted);
   border-left: 2px solid var(--border);
+}
+
+.map-loading {
+  margin: 0;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+/* ---- Map controls: zoom in, zoom out, show all --------------------------------------------- */
+
+/* One column of three identical buttons in one frame; the dividers are the only thing between them. */
+.map-controls {
+  position: absolute;
+  z-index: 3;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(10px + env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow);
+}
+
+.map-controls button {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.map-controls button + button {
+  border-top: 1px solid var(--border);
+}
+
+.map-controls button:hover {
+  background: var(--segment-bg);
+}
+
+@media (pointer: fine) and (min-width: 641px) {
+  .map-controls button {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* While the theme is switching, colours cross-fade instead of jumping. */
+.theme-fade,
+.theme-fade *,
+.theme-fade *::before,
+.theme-fade *::after {
+  transition:
+    background-color 250ms ease,
+    color 250ms ease,
+    border-color 250ms ease,
+    fill 250ms ease,
+    stroke 250ms ease !important;
+}
+
+/* A tap should act at once, without the delay some browsers add while waiting for a double tap. */
+a,
+button,
+select,
+summary,
+[role="radio"],
+label {
+  touch-action: manipulation;
+}
+
+/* ---- Paper grain and wash ------------------------------------------------------------------- */
+
+/* The same film grain as the Landing, over everything. Plain alpha (no blend mode) so it costs
+   nothing while the map is being dragged. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.1;
+  background-image: var(--grain-image-paper);
+}
+
+
+/* ---------------------------------------------------------------------------------------------
+   The bar layout, at every width. A name card on top, a bar of five icons at the bottom, and a panel
+   opens as a sheet above that bar, one at a time (see panels.ts). On a phone the bars run the full
+   width; on a bigger screen the bottom bar stays a compact one in the middle.
+   --------------------------------------------------------------------------------------------- */
+.app {
+  --bar-w: min(calc(100vw - 16px), 540px);
+  --bar-left: calc((100vw - var(--bar-w)) / 2);
+  --cell: calc(var(--bar-w) / 5);
+  --bar-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  --sheet-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+/* The two stacks dissolve, so each part can sit where this layout wants it. */
+.overlay-top,
+.overlay-bottom,
+.overlay-bottom > .sheet {
+  display: contents;
+}
+
+.overlay-top.sheet > .brand {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  left: 8px;
+  z-index: 3;
+  box-sizing: border-box;
+  width: min(calc(100vw - 16px), 340px);
+  height: 52px;
+  padding: 0 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.brand p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  letter-spacing: 0.16em;
+}
+
+/* The four panels are four equal cells of one bar along the bottom. */
+.sheet > .filter-panel,
+.sheet > .layers-panel,
+.sheet > .regency-panel,
+.sheet > .legend-panel,
+.sheet > .chat-panel {
+  position: fixed;
+  bottom: var(--bar-bottom);
+  z-index: 3;
+  display: flex;
+  /* Explicit, so every cell lays out the same way whichever older panel rule it did or did not inherit. */
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--cell);
+  height: 56px;
+  min-height: 0;
+  overflow: visible;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.sheet > .filter-panel {
+  left: var(--bar-left);
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
+}
+
+.sheet > .layers-panel {
+  left: calc(var(--bar-left) + var(--cell));
+  border-left-width: 0;
+  border-radius: 0;
+}
+
+.sheet > .regency-panel {
+  left: calc(var(--bar-left) + var(--cell) * 2);
+  border-left-width: 0;
+  border-radius: 0;
+}
+
+.sheet > .legend-panel {
+  left: calc(var(--bar-left) + var(--cell) * 3);
+  border-left-width: 0;
+  border-radius: 0;
+}
+
+.sheet > .chat-panel {
+  left: calc(var(--bar-left) + var(--cell) * 4);
+  border-left-width: 0;
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+}
+
+.filter-panel:has(.panel-body),
+.layers-panel:has(.panel-body),
+.regency-panel:has(.panel-body),
+.legend-panel:has(.panel-body),
+.chat-panel:has(.panel-body) {
+  min-height: 0;
+}
+
+/* An icon over a small label, as a bottom bar should be. */
+.sheet > .card .panel-toggle {
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+.sheet > .card .panel-toggle:hover {
+  background: var(--segment-bg);
+}
+
+.sheet > .card .panel-toggle[aria-expanded="true"] {
+  background: var(--accent-soft);
+}
+
+.sheet > .card .panel-toggle .chevron {
+  display: none;
+}
+
+.sheet > .card .panel-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* The panel's body is a sheet that rises from the bottom bar. */
+.sheet > .card .panel-body {
+  position: fixed;
+  left: var(--bar-left);
+  bottom: var(--sheet-bottom);
+  z-index: 4;
+  box-sizing: border-box;
+  width: var(--bar-w);
+  max-height: min(62vh, 560px);
+  padding: 12px 14px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.chat-panel .panel-body {
+  height: min(62vh, 520px);
+}
+
+.chat-log {
+  max-height: none;
+}
+
+/* The data sources are a small round button beside the bar, and step aside while a sheet is open. */
+.credits {
+  position: fixed;
+  right: 8px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  width: min(86vw, 320px);
+  font-size: 10.5px;
+}
+
+/* Folded: a round button with just the info icon. Open: a small card with the name as its heading. */
+.credits-folded {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.credits-folded[open] {
+  width: auto;
+  height: auto;
+  max-width: min(86vw, 320px);
+  border-radius: 10px;
+}
+
+.credits-folded summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rust-text);
+  cursor: pointer;
+  list-style: none;
+}
+
+.credits-folded[open] summary {
+  justify-content: flex-start;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+}
+
+.credits-folded summary::-webkit-details-marker {
+  display: none;
+}
+
+.credits-folded summary svg {
+  width: 20px;
+  height: 20px;
+}
+
+.credits-folded:not([open]) .credits-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.credits-folded p {
+  margin: 0;
+  padding: 0 12px 10px;
+  line-height: 1.5;
+}
+
+.app:has(.panel-body) .credits {
+  display: none;
+}
+
+/* The status pills stack under the name card. A warning may be a whole sentence, so it wraps
+   inside the card instead of running off the screen. */
+.status-bar {
+  position: fixed;
+  top: calc(68px + env(safe-area-inset-top, 0px));
+  left: 8px;
+  z-index: 2;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: min(calc(100vw - 72px), 420px);
+  pointer-events: none;
+}
+
+.status-bar .pill {
+  gap: 6px;
+  padding: 4px 10px;
+  max-width: 100%;
+  font-size: 12px;
+  white-space: normal;
+  pointer-events: auto;
+}
+
+.status-bar .pill-alert {
+  border-radius: 12px;
+}
+
+/* Five labels share the bar, so on a narrow phone they get a little smaller. */
+@media (max-width: 420px) {
+  .sheet > .card .panel-toggle {
+    font-size: 9px;
+    letter-spacing: 0.04em;
+  }
+}
+
+/* On a phone the bars take the full width, so the chips sit above the bottom bar and the map's
+   controls clear the name card. */
+@media (max-width: 640px) {
+  .overlay-top.sheet > .brand {
+    width: calc(100vw - 16px);
+  }
+
+  .credits {
+    bottom: var(--sheet-bottom);
+  }
+
+  .map-controls {
+    top: calc(68px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* ---- Chat in the bar layout ------------------------------------------------------------------ */
+
+/* The sheet is as tall as what is in it, up to its limit; it does not open as a big empty box. */
+.chat-panel .panel-body {
+  height: auto;
+}
+
+.chat-log {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+/* The two small notes read as one line of fine print. */
+.chat-notes {
+  flex: none;
+  margin-top: 8px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.chat-notes .chat-note,
+.chat-notes .chat-privacy {
+  display: inline;
+  margin: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+.chat-notes .chat-note::after {
+  content: " ";
+}
+
+/* Space is tight on a phone, and the same warning already ends every answer, so the standing note goes. */
+@media (max-width: 640px) {
+  .chat-notes .chat-note {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Website (wider than a phone): the five icon cells are a vertical rail on the left edge instead of a
+   bar along the bottom, and a panel opens as a sheet beside the rail. A phone keeps the bottom bar.
+   --------------------------------------------------------------------------------------------- */
+@media (min-width: 641px) {
+  .app {
+    --rail-w: 88px;
+    --rail-cell: 62px;
+    /* just under the status pills, which sit under the name card (68px down) and vary in height */
+    --rail-top: calc(68px + var(--status-h, 28px) + 12px);
+  }
+
+  .sheet > .filter-panel,
+  .sheet > .layers-panel,
+  .sheet > .regency-panel,
+  .sheet > .legend-panel,
+  .sheet > .chat-panel {
+    left: 8px;
+    bottom: auto;
+    width: var(--rail-w);
+    height: var(--rail-cell);
+    /* stacked: each cell shares the line above it, the first brings its own top edge */
+    border-width: 0 1px 1px 1px;
+    border-radius: 0;
+  }
+
+  .sheet > .filter-panel {
+    top: var(--rail-top);
+    border-top-width: 1px;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+
+  .sheet > .layers-panel {
+    top: calc(var(--rail-top) + var(--rail-cell));
+  }
+
+  .sheet > .regency-panel {
+    top: calc(var(--rail-top) + var(--rail-cell) * 2);
+  }
+
+  .sheet > .legend-panel {
+    top: calc(var(--rail-top) + var(--rail-cell) * 3);
+  }
+
+  .sheet > .chat-panel {
+    top: calc(var(--rail-top) + var(--rail-cell) * 4);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
+  }
+
+  /* The sheet opens to the right of the rail, level with its top. */
+  .sheet > .card .panel-body {
+    left: calc(8px + var(--rail-w) + 8px);
+    top: var(--rail-top);
+    bottom: auto;
+    width: min(380px, calc(100vw - 120px));
+    max-height: calc(100vh - var(--rail-top) - 16px);
+  }
+
+  .chat-panel .panel-body {
+    width: min(420px, calc(100vw - 120px));
+  }
+}
+
+/* How a misspelled word was read: fine print under the answer, so a wrong reading is easy to spot. */
+.chat-message .reading-note {
+  margin-top: 6px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-muted);
 }

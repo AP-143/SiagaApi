@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import App from "./App";
@@ -47,92 +46,36 @@ test("the page introduces itself", () => {
   expect(screen.getByText("Pantau titik api Kalimantan")).toBeInTheDocument();
 });
 
-test("the theme follows the system when nothing was chosen", () => {
-  systemPrefersDark(true);
-  setup();
-  expect(theme()).toBe("dark");
-});
-
-test("a light system gets the light theme", () => {
+test("the map is dark, whatever the system prefers", () => {
   systemPrefersDark(false);
-  setup();
-  expect(theme()).toBe("light");
-});
-
-test("the theme can be switched, and the button says what it will do", async () => {
-  systemPrefersDark(false);
-  setup();
-
-  await userEvent.click(screen.getByRole("button", { name: "Ganti ke tema gelap" }));
-
-  expect(theme()).toBe("dark");
-  expect(screen.getByRole("button", { name: "Ganti ke tema terang" })).toBeInTheDocument();
-});
-
-test("the chosen theme is remembered for the next visit", async () => {
-  systemPrefersDark(false);
-  setup();
-  await userEvent.click(screen.getByRole("button", { name: "Ganti ke tema gelap" }));
-
-  document.body.innerHTML = "";
-  delete document.documentElement.dataset.theme;
   setup();
 
   expect(theme()).toBe("dark");
 });
 
-test("a remembered choice wins over the system setting", () => {
+test("a light choice remembered from an earlier visit is ignored", () => {
   localStorage.setItem("siagaapi-theme", "light");
-  systemPrefersDark(true);
-
-  setup();
-
-  expect(theme()).toBe("light");
-});
-
-test("the page still works when the browser refuses to store the choice", async () => {
   systemPrefersDark(false);
-  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-    throw new Error("storage blocked");
-  });
-  vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-    throw new Error("storage blocked");
-  });
   setup();
-
-  await userEvent.click(screen.getByRole("button", { name: "Ganti ke tema gelap" }));
 
   expect(theme()).toBe("dark");
-  vi.restoreAllMocks();
 });
 
-test("the basemap goes dark with the theme so Hotspots stand out", async () => {
+test("there is no theme switch", () => {
+  systemPrefersDark(false);
+  setup();
+
+  expect(screen.queryByRole("button", { name: /tema/i })).toBeNull();
+});
+
+test("the basemap is the dark one so Hotspots stand out", async () => {
   systemPrefersDark(false);
   setup();
   await waitFor(() => expect(createdMaps).toHaveLength(1));
   const map = createdMaps[0];
-  const light = {
-    min: map.basemapPaint("osm", "raster-brightness-min") as number,
-    max: map.basemapPaint("osm", "raster-brightness-max") as number,
-  };
 
-  await userEvent.click(screen.getByRole("button", { name: "Ganti ke tema gelap" }));
-
-  const dark = {
-    min: map.basemapPaint("osm", "raster-brightness-min") as number,
-    max: map.basemapPaint("osm", "raster-brightness-max") as number,
-  };
-  // A light basemap runs dark to bright; the dark one is inverted: light areas become dark.
-  expect(light.min).toBeLessThan(light.max);
-  expect(dark.min).toBeGreaterThan(dark.max);
-});
-
-test("the map is not rebuilt when the theme changes", async () => {
-  systemPrefersDark(false);
-  setup();
-  await waitFor(() => expect(createdMaps).toHaveLength(1));
-
-  await userEvent.click(screen.getByRole("button", { name: "Ganti ke tema gelap" }));
-
-  expect(createdMaps).toHaveLength(1);
+  const min = map.basemapPaint("osm", "raster-brightness-min") as number;
+  const max = map.basemapPaint("osm", "raster-brightness-max") as number;
+  // The dark basemap is inverted: light areas become dark.
+  expect(min).toBeGreaterThan(max);
 });

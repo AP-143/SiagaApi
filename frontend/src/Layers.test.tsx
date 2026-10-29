@@ -280,16 +280,14 @@ function isLight(hex: string) {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
 }
 
-test("boundary lines are dark on the light street map", async () => {
-  localStorage.setItem("siagaapi-theme", "light");
+test("boundary lines are light, so they show on the dark map", async () => {
   setup();
   await waitFor(() => expect(map()).toBeDefined());
 
-  expect(isLight(lineColor())).toBe(false);
+  expect(isLight(lineColor())).toBe(true);
 });
 
-test("boundary lines turn light on satellite imagery so they can be seen", async () => {
-  localStorage.setItem("siagaapi-theme", "light");
+test("boundary lines stay light on satellite imagery so they can be seen", async () => {
   setup();
   await waitFor(() => expect(map()).toBeDefined());
 
@@ -298,12 +296,32 @@ test("boundary lines turn light on satellite imagery so they can be seen", async
   expect(isLight(lineColor())).toBe(true);
 });
 
-test("boundary lines are light on the dark theme", async () => {
-  localStorage.setItem("siagaapi-theme", "dark");
+test("each boundary line has a dark casing under it, so it still shows over white clouds", async () => {
   setup();
+  await waitFor(() => expect(map().layerIds()).toContain("hotspots"));
+
+  const order = map().layerIds();
+  for (const [casing, line] of [
+    ["province-casing", "province-lines"],
+    ["regency-casing", "regency-lines"],
+  ]) {
+    expect(order.indexOf(casing)).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf(casing)).toBeLessThan(order.indexOf(line));
+    expect(isLight(map().paintValue(casing, "line-color") as string)).toBe(false);
+  }
+});
+
+test("a casing is shown and hidden with the boundary it belongs to", async () => {
+  setup("/?layers=gambut");
   await waitFor(() => expect(map()).toBeDefined());
 
-  expect(isLight(lineColor())).toBe(true);
+  expect(map().layerVisibility("province-casing")).toBe("none");
+  expect(map().layerVisibility("regency-casing")).toBe("none");
+
+  await userEvent.click(screen.getByLabelText("Batas provinsi"));
+
+  expect(map().layerVisibility("province-casing")).toBe("visible");
+  expect(map().layerVisibility("regency-casing")).toBe("none");
 });
 
 // ---- Legend and credits --------------------------------------------------------------------------
