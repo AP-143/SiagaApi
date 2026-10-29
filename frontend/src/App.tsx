@@ -46,6 +46,10 @@ export default function App() {
   const [summary, setSummary] = useState<SummaryState>({ rows: null, failed: false, key: "" });
   const [freshness, setFreshness] = useState<FreshnessState>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  // "Tampilkan di peta" asks the map to move to wherever the answer's Hotspots turn out to be, once
+  // they have been fetched; `focus` counts those requests.
+  const pendingFocus = useRef(false);
+  const [focus, setFocus] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshTick, setRefreshTick] = useState(0);
   const panels = usePanels();
@@ -106,12 +110,17 @@ export default function App() {
         setHotspots(collection.features);
         setLoading(false);
         setLoadFailed(false);
+        if (pendingFocus.current) {
+          pendingFocus.current = false;
+          setFocus((count) => count + 1);
+        }
       },
       () => {
         // Keep the last known Hotspots on screen, but say they may be out of date.
         if (cancelled) return;
         setLoadFailed(true);
         setLoading(false);
+        pendingFocus.current = false;
       },
     );
     return () => {
@@ -156,6 +165,7 @@ export default function App() {
         view={view}
         layerData={layers.data}
         satelliteDate={satelliteDate}
+        focus={focus}
       />
       <div className="overlay overlay-top sheet">
         <Brand />
@@ -197,6 +207,7 @@ export default function App() {
             open={panels.open.chat}
             onToggle={() => panels.toggle("chat")}
             onShowOnMap={(view) => {
+              pendingFocus.current = true;
               setFilters(view);
               panels.closeOnPhone();
             }}

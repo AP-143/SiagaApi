@@ -64,6 +64,14 @@ export const MinusIcon = () => (
   </Icon>
 );
 
+/** A map pin: "show this on the map". */
+export const MapPinIcon = () => (
+  <Icon size={16}>
+    <path d="M12 21s-6.5-5.6-6.5-10.5a6.5 6.5 0 1 1 13 0C18.5 15.4 12 21 12 21Z" />
+    <circle cx="12" cy="10.5" r="2.3" />
+  </Icon>
+);
+
 export const ChevronIcon = () => (
   <Icon size={16}>
     <path d="m6 9 6 6 6-6" />

@@ -8,7 +8,7 @@ import { satelliteTileUrl } from "../satellite";
 import { LAYER_NAMES, type MapViewState } from "../view";
 import { basemapPaint } from "./basemap";
 import { FrameIcon, MinusIcon, PlusIcon } from "../icons";
-import { FRAME_PADDING, KALIMANTAN_BOUNDS } from "./kalimantan";
+import { KALIMANTAN_BOUNDS, framePadding } from "./kalimantan";
 import { OVERLAY_LAYERS, overlayLayerSpecs } from "./overlays";
 import { buildHotspotPopup } from "./popup";
 
@@ -87,7 +87,7 @@ function basemapStyle(view: MapViewState, satelliteDate: string) {
 
 /** Fit the map to Kalimantan with room for the bars around it. */
 function frameKalimantan(map: maplibregl.Map, animate: boolean) {
-  map.fitBounds(KALIMANTAN_BOUNDS, { padding: FRAME_PADDING, animate, duration: 700 });
+  map.fitBounds(KALIMANTAN_BOUNDS, { padding: framePadding(), animate, duration: 700 });
 }
 
 function toCollection(hotspots: Hotspot[]): GeoJSON.FeatureCollection {
@@ -99,9 +99,11 @@ type Props = {
   view: MapViewState;
   layerData: LayerData;
   satelliteDate: string;
+  /** Goes up each time the map should move to the Hotspots it is now showing. */
+  focus: number;
 };
 
-export default function MapView({ hotspots, view, layerData, satelliteDate }: Props) {
+export default function MapView({ hotspots, view, layerData, satelliteDate, focus }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [ready, setReady] = useState(false);
@@ -188,6 +190,28 @@ export default function MapView({ hotspots, view, layerData, satelliteDate }: Pr
       map.remove();
     };
   }, []);
+
+  // After "Tampilkan di peta": move to where the Hotspots are, or back to Kalimantan if there are none.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || focus === 0) return;
+    const points = latest.current.hotspots.map((hotspot) => hotspot.geometry.coordinates);
+    if (points.length === 0) {
+      frameKalimantan(map, true);
+      return;
+    }
+    const lngs = points.map(([lng]) => lng);
+    const lats = points.map(([, lat]) => lat);
+    map.fitBounds(
+      [
+        [Math.min(...lngs), Math.min(...lats)],
+        [Math.max(...lngs), Math.max(...lats)],
+      ],
+      { padding: framePadding(), maxZoom: 9, animate: true, duration: 700 },
+    );
+    // Only when asked: a refresh of the same Hotspots must not move the map under someone's hands.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus]);
 
   useEffect(() => {
     const source = mapRef.current?.getSource(HOTSPOT_SOURCE) as maplibregl.GeoJSONSource | undefined;

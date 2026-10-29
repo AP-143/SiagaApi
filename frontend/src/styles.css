@@ -926,6 +926,36 @@ body {
   background: rgba(236, 227, 209, 0.2);
 }
 
+/* "Tampilkan di peta" is an action, not a suggestion: a solid paper button with a pin, so it reads as
+   the thing to press and does not look like one more chip. */
+.map-button {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 0 18px 0 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--button-text);
+  background: var(--button-bg);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.map-button:hover {
+  background: #fff7e8;
+}
+
+.map-button svg {
+  flex: none;
+}
+
 .source-link {
   margin-left: 6px;
   font-weight: 600;

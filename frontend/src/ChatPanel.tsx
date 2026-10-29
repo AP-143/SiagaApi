@@ -5,7 +5,7 @@ import { useChat } from "./chat";
 import ChipRow from "./ChipRow";
 import Collapsible from "./Collapsible";
 import type { Filters } from "./filters";
-import { ChatIcon, SendIcon } from "./icons";
+import { ChatIcon, MapPinIcon, SendIcon } from "./icons";
 import MotionFeatures from "./MotionFeatures";
 
 const MAX_LENGTH = 500; // what the server accepts
@@ -120,11 +120,8 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                 </p>
               )}
               {message.view && (
-                <button
-                  type="button"
-                  className="chip-button map-button"
-                  onClick={() => onShowOnMap(message.view!)}
-                >
+                <button type="button" className="map-button" onClick={() => onShowOnMap(message.view!)}>
+                  <MapPinIcon />
                   Tampilkan di peta
                 </button>
               )}
