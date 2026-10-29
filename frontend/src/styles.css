@@ -1726,3 +1726,11 @@ label {
     width: min(420px, calc(100vw - 120px));
   }
 }
+
+/* How a misspelled word was read: fine print under the answer, so a wrong reading is easy to spot. */
+.chat-message .reading-note {
+  margin-top: 6px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-muted);
+}

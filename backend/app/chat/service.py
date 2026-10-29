@@ -157,13 +157,26 @@ def answer_question(
     return answers.unsupported_reply()
 
 
+def _with_reading_note(reply: dict, read_as: tuple[str, str] | None) -> dict:
+    """Say how a misspelled place was read: plain text after the answer, and in the data."""
+    if read_as is None:
+        return reply
+    typed, name = read_as
+    note = f"Saya membaca '{typed}' sebagai {name}."
+    return {
+        **reply,
+        "answer": f"{reply['answer']}\n\n{note}",
+        "data": {**reply["data"], "read_as": {"typed": typed, "as": name}},
+    }
+
+
 def _answer_understood(conn: psycopg.Connection, question: Question, now: datetime) -> dict | None:
     """The reply for a question we know how to answer from the database, else None."""
     match question.intent:
         case Intent.COUNT:
-            return _count(conn, question, now)
+            return _with_reading_note(_count(conn, question, now), question.read_as)
         case Intent.RANKING:
-            return _ranking(conn, question, now)
+            return _with_reading_note(_ranking(conn, question, now), question.read_as)
         case Intent.FRESHNESS:
             return answers.freshness_reply(queries.freshness(conn, now))
         case Intent.GREETING:
@@ -171,7 +184,7 @@ def _answer_understood(conn: psycopg.Connection, question: Question, now: dateti
         case Intent.CLARIFY:
             return answers.clarify_reply(question.candidates or [])
         case Intent.UNKNOWN_PLACE:
-            return answers.unknown_place_reply(question.unknown_phrase)
+            return answers.unknown_place_reply(question.unknown_phrase, question.suggestion)
         case Intent.UNSUPPORTED_WINDOW:
             return answers.unsupported_window_reply()
     return None

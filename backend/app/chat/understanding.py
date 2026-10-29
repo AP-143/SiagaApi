@@ -88,6 +88,9 @@ class Question:
     scope: Scope = field(default_factory=Scope)
     candidates: list[Area] | None = None
     unknown_phrase: str | None = None
+    suggestion: str | None = None
+    # A place that was misspelled: (what was typed, the name it was read as); shown to the person.
+    read_as: tuple[str, str] | None = None
     ranking_unit: RankingUnit = RankingUnit.REGENCY
 
 
@@ -147,7 +150,9 @@ def understand(message: str, places: PlaceIndex) -> Question:
     if resolution.kind == "ambiguous":
         return Question(Intent.CLARIFY, candidates=resolution.candidates)
     if resolution.kind == "unknown":
-        return Question(Intent.UNKNOWN_PLACE, unknown_phrase=resolution.unknown_phrase)
+        return Question(
+            Intent.UNKNOWN_PLACE, unknown_phrase=resolution.unknown_phrase, suggestion=resolution.suggestion
+        )
 
     scope = Scope(
         area=resolution.area,
@@ -157,5 +162,5 @@ def understand(message: str, places: PlaceIndex) -> Question:
     )
     if RANKING.search(text) and not (resolution.area and resolution.area.type == "regency"):
         unit = RankingUnit.PROVINCE if PROVINCE_WORD.search(text) else RankingUnit.REGENCY
-        return Question(Intent.RANKING, scope=scope, ranking_unit=unit)
-    return Question(Intent.COUNT, scope=scope)
+        return Question(Intent.RANKING, scope=scope, ranking_unit=unit, read_as=resolution.read_as)
+    return Question(Intent.COUNT, scope=scope, read_as=resolution.read_as)

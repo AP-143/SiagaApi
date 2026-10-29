@@ -119,6 +119,7 @@ export default function ChatPanel({ open, onToggle, onShowOnMap }: Props) {
                   Mode sederhana: asisten AI sedang tidak tersedia, jadi jawaban ini dari aturan baku.
                 </p>
               )}
+              {message.readingNote && <p className="reading-note">{message.readingNote}</p>}
               {message.view && (
                 <button type="button" className="map-button" onClick={() => onShowOnMap(message.view!)}>
                   <MapPinIcon />

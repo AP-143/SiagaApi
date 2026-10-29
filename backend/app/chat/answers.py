@@ -134,12 +134,13 @@ def clarify_reply(candidates: list[Area]) -> dict:
     }
 
 
-def unknown_place_reply(phrase: str | None) -> dict:
+def unknown_place_reply(phrase: str | None, suggestion: str | None = None) -> dict:
     safe = "".join(ch for ch in (phrase or "") if ch.isalpha() or ch == " ")[:40].strip()
+    maybe = f" Maksud Anda {suggestion}?" if suggestion else ""
     return {
         "kind": "unknown_place",
         "answer": (
-            f"Saya tidak mengenali wilayah \"{safe}\" di Kalimantan. "
+            f"Saya tidak mengenali wilayah \"{safe}\" di Kalimantan.{maybe} "
             "Saya hanya punya data titik api untuk lima provinsi di Kalimantan "
             "dan kabupaten/kota di dalamnya."
         ),

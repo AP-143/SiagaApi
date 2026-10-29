@@ -31,6 +31,8 @@ export type ChatMessage = {
   modelWritten?: boolean;
   /** The passage, word for word, that a model-written answer rests on. */
   quote?: string;
+  /** How a misspelled place or word was read, as one plain sentence ("Saya membaca ... sebagai ..."). */
+  readingNote?: string;
 };
 
 // How many earlier messages go with a question; the server accepts no more than this.
@@ -150,6 +152,21 @@ function modelWrittenParts(reply: ChatReply): { modelWritten?: boolean; quote?: 
   return {};
 }
 
+/**
+ * A reply that repaired a misspelling ends with one sentence saying how it was read, and says so in
+ * its data. The sentence is taken off the answer and shown apart, so it reads as a note, once.
+ */
+export function takeReadingNote(reply: ChatReply): { reply: ChatReply; readingNote?: string } {
+  const readAs = reply.data.read_as as { typed?: unknown; as?: unknown } | undefined;
+  if (!readAs || typeof readAs.typed !== "string" || typeof readAs.as !== "string") return { reply };
+  const note = `Saya membaca '${readAs.typed}' sebagai ${readAs.as}.`;
+  const ending = `
+
+${note}`;
+  if (!reply.answer.endsWith(ending)) return { reply };
+  return { reply: { ...reply, answer: reply.answer.slice(0, -ending.length) }, readingNote: note };
+}
+
 function followUps(reply: ChatReply, asked: string) {
   const choices = (reply.data.candidates ?? []).map((candidate) => ({
     label: candidate.name,
@@ -196,9 +213,10 @@ export function useChat() {
     setBusy(true);
     add({ role: "user", text: shown });
     try {
-      const reply = await sendChat(asked, history);
+      const { reply, readingNote } = takeReadingNote(await sendChat(asked, history));
       add({
         role: "assistant",
+        readingNote,
         ...(reply.kind === "ranking" ? splitRanking(reply) : splitSourceNote(reply)),
         view: filtersFromReply(reply) ?? undefined,
         sourceLinks: linkableSources(reply),

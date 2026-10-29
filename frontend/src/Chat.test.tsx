@@ -416,9 +416,14 @@ const SAMBAS_AREA = { type: "regency", code: "ID6101", name: "Sambas", province_
 const REGION_AREA = { type: "region", name: "Kalimantan" };
 
 function viewReply(area: Record<string, unknown>, extra: Record<string, unknown> = {}, kind = "count"): Reply {
+  const readAs = extra.read_as as { typed: string; as: string } | undefined;
   return {
     kind,
-    answer: "Dalam 48 jam terakhir ada 12 titik api.",
+    answer:
+      "Dalam 48 jam terakhir ada 12 titik api." +
+      (readAs ? `
+
+Saya membaca '${readAs.typed}' sebagai ${readAs.as}.` : ""),
     data: { count: 12, area, window: "48h", peat_only: false, include_low: false, ...extra },
   };
 }
@@ -986,4 +991,32 @@ test("the button that shows an answer on the map is its own button, with an icon
   expect(button).toHaveClass("map-button");
   expect(button).not.toHaveClass("chip-button");
   expect(button.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+});
+
+test("an answer that read a misspelled place says so in a small line of its own", async () => {
+  setup(() =>
+    json(
+      viewReply(KALTENG_AREA, {
+        read_as: { typed: "kalimantan tengh", as: "Kalimantan Tengah" },
+      }),
+      undefined,
+    ),
+  );
+  const log = await openChat();
+  await ask("titik api di kalimantan tengh");
+
+  await within(log).findByText(/titik api\./);
+  const note = log.querySelector(".reading-note")!;
+  expect(note).toHaveTextContent("Saya membaca 'kalimantan tengh' sebagai Kalimantan Tengah.");
+  // It is shown once: not also inside the answer's own text.
+  expect(within(log).getAllByText(/Saya membaca/)).toHaveLength(1);
+});
+
+test("an answer that needed no repair has no reading note", async () => {
+  setup(() => json(viewReply(KALTENG_AREA)));
+  const log = await openChat();
+  await ask("titik api di kalimantan tengah");
+
+  await within(log).findByText(/titik api\./);
+  expect(log.querySelector(".reading-note")).toBeNull();
 });

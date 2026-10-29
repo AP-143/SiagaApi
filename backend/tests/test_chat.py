@@ -451,3 +451,83 @@ def test_a_word_that_merely_starts_with_di_is_not_split_into_a_place(real_names)
     reply = ask(real_names, "berapa titik api yang terdeteksi dimana saja?")
 
     assert reply["data"]["area"]["type"] == "region"
+
+
+# ---- A misspelled place is read, never replaced by all of Kalimantan --------------------------------
+
+
+@pytest.mark.parametrize(
+    "typed, correct, name",
+    [
+        ("berapa titik api di kalimantan tengh", "berapa titik api di kalimantan tengah", "Kalimantan Tengah"),
+        ("berapa titik api di kalimantan selatn", "berapa titik api di kalimantan selatan", "Kalimantan Selatan"),
+        ("berapa titik api di kalimantan utra", "berapa titik api di kalimantan utara", "Kalimantan Utara"),
+        ("berapa titik api di sambass", "berapa titik api di sambas", "Sambas"),
+        ("berapa titik api di pontiank", "berapa titik api di pontianak", "Pontianak"),
+        ("berapa titik api di singkawng", "berapa titik api di singkawang", "Kota Singkawang"),
+    ],
+)
+def test_a_misspelled_place_is_read_as_the_place_it_nearly_is(real_names, typed, correct, name):
+    reply = ask(real_names, typed)
+
+    assert reply["kind"] == "count", reply
+    assert reply["data"]["area"]["name"] == name
+    # The same number as the properly typed question gives.
+    assert reply["data"]["count"] == ask(real_names, correct)["data"]["count"]
+    assert reply["data"]["read_as"] == {"typed": typed.split(" di ")[1], "as": name}
+    assert f"Saya membaca '{typed.split(' di ')[1]}' sebagai {name}." in reply["answer"]
+
+
+def test_a_properly_typed_place_has_no_reading_note(real_names):
+    reply = ask(real_names, "berapa titik api di kalimantan tengah")
+
+    assert "read_as" not in reply["data"]
+    assert "Saya membaca" not in reply["answer"]
+
+
+def test_a_misspelled_place_in_a_ranking_is_read_too(real_names):
+    reply = ask(real_names, "kabupaten mana yang paling banyak titik api di kalimantan barat tngah")
+
+    assert reply["kind"] != "unsupported", reply
+
+
+@pytest.fixture
+def close_names(world, database_url):
+    """Two names one letter apart, so a slip lands equally near both."""
+    extra = [fixtures.regency("ID6199", "Sambar", "ID61", "Kalimantan Barat", 110.2, 0.2, 0.2)]
+    with psycopg.connect(database_url) as conn:
+        load_boundaries(conn, fixtures.ALL_PROVINCES, [*fixtures.ALL_REGENCIES, *extra])
+    return world
+
+
+def test_a_slip_that_is_equally_near_two_places_asks_which_one(close_names):
+    reply = ask(close_names, "berapa titik api di sambat")
+
+    assert reply["kind"] == "clarify", reply
+    names = {candidate["name"] for candidate in reply["data"]["candidates"]}
+    assert names == {"Sambas", "Sambar"}
+
+
+def test_a_place_that_is_near_nothing_is_turned_away_not_replaced_by_all_of_kalimantan(real_names):
+    reply = ask(real_names, "berapa titik api di palembang")
+
+    assert reply["kind"] == "unknown_place", reply
+    assert "area" not in reply["data"]
+
+
+def test_an_unknown_place_offers_the_nearest_known_name(real_names):
+    # Too far to be read as Sambas without asking (two letters), but near enough to offer.
+    reply = ask(real_names, "berapa titik api di sambasan")
+
+    assert reply["kind"] == "unknown_place", reply
+    assert "Maksud Anda Sambas?" in reply["answer"]
+
+
+def test_ordinary_words_are_not_mistaken_for_places(real_names):
+    for question in [
+        "berapa titik api yang terdeteksi hari ini",
+        "kabupaten mana yang paling banyak titik apinya",
+        "titik api kapan terakhir diperbarui",
+    ]:
+        reply = ask(real_names, question)
+        assert "read_as" not in reply["data"], (question, reply)
