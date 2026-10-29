@@ -7,8 +7,17 @@ from app.chat import answers
 from app.chat.explain import ExplanationCache, grounded_explanation
 from app.chat.model import ModelClient, ModelUnavailable
 from app.chat.model_intent import question_from_model, rewrite_follow_up
-from app.chat.places import PlaceIndex
-from app.chat.understanding import Intent, Question, RankingUnit, Scope, asks_for_a_period_the_map_lacks, understand
+from app.chat.places import PlaceIndex, normalize
+from app.chat.repair import repair_question
+from app.chat.understanding import (
+    Intent,
+    Question,
+    RankingUnit,
+    Scope,
+    asks_for_a_period_the_map_lacks,
+    asks_for_an_explanation,
+    understand,
+)
 from app.knowledge import Passage, is_too_short_to_stand_alone, search_knowledge
 
 
@@ -102,6 +111,30 @@ def _from_rules_or_documents(
     return _explain(message, passages, places, model, cache) if passages else None
 
 
+def _read_again_repaired(
+    conn: psycopg.Connection,
+    message: str,
+    now: datetime,
+    places: PlaceIndex,
+    model: ModelClient | None,
+    cache: ExplanationCache,
+) -> dict | None:
+    """The reply for the question with its spelling and spacing repaired, or None when repair changed nothing
+    or the repaired question is not one we can answer either."""
+    repair = repair_question(normalize(message), places.words)
+    if not repair.readings:
+        return None
+    if asks_for_an_explanation(normalize(message)):
+        # A question about a term may only find its document again; a repair never turns it into a count.
+        passages = search_knowledge(conn, repair.text)
+        reply = _explain(repair.text, passages, places, model, cache) if passages else None
+    else:
+        reply = _from_rules_or_documents(conn, repair.text, now, places, model, cache)
+    if reply is None or reply.get("kind") in ("unsupported", "unsupported_window"):
+        return None
+    return _with_reading_note(reply, repair.readings)
+
+
 def answer_question(
     conn: psycopg.Connection,
     message: str,
@@ -130,6 +163,13 @@ def answer_question(
     follow_up = model is not None and bool(history) and is_too_short_to_stand_alone(conn, message)
     if passages and not follow_up:
         return _explain(message, passages, places, model, cache)
+
+    # Nothing yet: perhaps it was typed without spaces or with slips. Read it again, repaired from our
+    # own vocabulary, by the rules and by the documents, and say how it was read.
+    if not passages:
+        repaired = _read_again_repaired(conn, message, now, places, model, cache)
+        if repaired is not None:
+            return repaired
     if model is None:
         return answers.unsupported_reply()
 

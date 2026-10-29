@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from app.chat.places import Area, PlaceIndex, Resolution, normalize
-from app.chat.repair import repair_words
+from app.chat.repair import repair_question
 from app.queries import TIME_WINDOWS
 
 FRESHNESS = re.compile(r"\b(diperbarui|diperbaharui|pembaruan|update|segar|usang|kedaluwarsa|kadaluarsa)\b")
@@ -129,6 +129,11 @@ def asks_for_a_period_the_map_lacks(message: str) -> bool:
 REPAIRABLE_INTENTS = {Intent.COUNT, Intent.RANKING, Intent.FRESHNESS}
 
 
+def asks_for_an_explanation(text: str) -> bool:
+    """True when a normalised question has a word that asks for an explanation (not for a number)."""
+    return bool(STRONG_EXPLAIN_WORD.search(text) or EXPLAIN_WORD.search(text))
+
+
 def _same_question(a: Question, b: Question) -> bool:
     return (a.intent, a.scope, a.ranking_unit) == (b.intent, b.scope, b.ranking_unit)
 
@@ -144,8 +149,8 @@ def understand(message: str, places: PlaceIndex) -> Question:
     original = _read(text, places)
     original.readings = [original.read_as] if original.read_as else []
 
-    repair = repair_words(text, places.words)
-    if not repair.readings or STRONG_EXPLAIN_WORD.search(text) or EXPLAIN_WORD.search(text):
+    repair = repair_question(text, places.words)
+    if not repair.readings or asks_for_an_explanation(text):
         return original
     repaired = _read(repair.text, places)
     if repaired.intent not in REPAIRABLE_INTENTS or _same_question(original, repaired):

@@ -606,3 +606,40 @@ def test_a_repair_that_would_flip_the_intent_of_a_properly_understood_count_is_n
 
     assert reply["kind"] == "count", reply
     assert "read_as" not in reply["data"]
+
+
+# ---- Questions typed without spaces ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "unspaced, spaced",
+    [
+        ("adaberapatitikapidikalimantanutara", "ada berapa titik api di kalimantan utara"),
+        ("berapatitikapidikalteng", "berapa titik api di kalteng"),
+        ("titikapidisambas", "titik api di sambas"),
+        ("kabupatenmanayangpalingbanyaktitikapinya", "kabupaten mana yang paling banyak titik apinya"),
+    ],
+)
+def test_a_question_typed_without_spaces_gives_the_answer_of_the_spaced_question(world, unspaced, spaced):
+    reply = ask(world, unspaced)
+    expected = ask(world, spaced)
+
+    assert reply["kind"] == expected["kind"], reply
+    assert reply["data"].get("count") == expected["data"].get("count")
+    assert reply["data"].get("area") == expected["data"].get("area")
+    assert reply["data"].get("ranking") == expected["data"].get("ranking")
+    assert reply["data"]["read_as"]["typed"] == unspaced
+    assert f"Saya membaca '{unspaced}' sebagai " in reply["answer"]
+
+
+def test_a_long_run_of_random_letters_stays_not_understood(world):
+    for noise in ["qwxzvrtyuopasdfghjklzxcvbnm", "xqzjvkwpfhgbyutrmnxzq titik"]:
+        reply = ask(world, noise)
+        assert reply["kind"] == "unsupported", (noise, reply)
+        assert "read_as" not in reply["data"]
+
+
+def test_a_properly_spaced_question_is_not_touched_by_the_splitting(world):
+    reply = ask(world, "Berapa titik api di Kalimantan Utara hari ini?")
+
+    assert "read_as" not in reply["data"]

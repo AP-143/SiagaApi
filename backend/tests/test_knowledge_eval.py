@@ -230,3 +230,15 @@ def test_without_the_embedding_model_the_chat_still_answers_by_words(real_knowle
     assert reply["kind"] == "knowledge"
     assert reply["data"]["sources"][0]["heading"] == "Mengapa kebakaran gambut sulit dipadamkan?"
     assert synonym["kind"] == "unsupported"  # words alone cannot find it, and nothing broke trying
+
+
+# ---- Typed without spaces, or with slips ------------------------------------------------------------
+
+
+def test_a_term_question_typed_without_spaces_is_answered_like_the_spaced_one(real_knowledge):
+    spaced = ask(real_knowledge, "apa itu hotspot")
+    reply = ask(real_knowledge, "apaituhotspot")
+
+    assert reply["kind"] == "knowledge", reply
+    assert reply["data"]["sources"][0]["heading"] == spaced["data"]["sources"][0]["heading"]
+    assert reply["data"]["read_as"]["typed"] == "apaituhotspot"

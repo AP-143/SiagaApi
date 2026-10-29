@@ -91,3 +91,73 @@ def repair_words(text: str, place_words: set[str]) -> Repair:
             words.append(word)
     readings = [(" ".join(typed)[:60], " ".join(read)[:60])] if typed else []
     return Repair(" ".join(words), readings)
+
+
+# Small words people write between the others, and endings that stick to a word ("apinya"). They help
+# split a run of letters but are too short to ever be repaired into.
+FUNCTION_WORDS = {
+    "ada", "api", "itu", "ini", "apa", "di", "ke", "dari", "yang", "dan", "atau", "pada", "untuk", "saya",
+    "kita", "kami", "mana", "lalu", "nya", "kah", "sih", "dong", "ya", "ini", "sini", "sana", "bisa",
+    "tolong", "mohon", "info", "data", "di", "jam", "terakhir", "hari",
+}
+
+MIN_SPLIT_LENGTH = 8  # a shorter unknown word is more likely a typo than a run of words
+
+
+def segment(token: str, words: set[str]) -> list[str] | None:
+    """Split a run of letters into known words, or None when it cannot be done, or only ambiguously.
+
+    The split with the fewest pieces wins, then the one with the longest words; when two different
+    splits are equally good none is chosen, because a guess here would read a different question.
+    """
+    n = len(token)
+    longest = max((len(word) for word in words), default=0)
+    # best[i] = (pieces, -sum of squared lengths, how many splits are that good (capped at 2), how it ends)
+    best: list[tuple[int, int, int, int] | None] = [None] * (n + 1)
+    best[0] = (0, 0, 1, 0)
+    for end in range(1, n + 1):
+        options: list[tuple[int, int, int, int]] = []
+        for size in range(1, min(longest, end) + 1):
+            start = end - size
+            previous = best[start]
+            if previous is None or token[start:end] not in words:
+                continue
+            options.append((previous[0] + 1, previous[1] - size * size, previous[2], start))
+        if not options:
+            continue
+        top = min((pieces, score) for pieces, score, _, _ in options)
+        ways = min(2, sum(count for pieces, score, count, _ in options if (pieces, score) == top))
+        start = next(start for pieces, score, _, start in options if (pieces, score) == top)
+        best[end] = (top[0], top[1], ways, start)
+    final = best[n]
+    if final is None or final[2] != 1:
+        return None
+    pieces: list[str] = []
+    end = n
+    while end > 0:
+        start = best[end][3]  # type: ignore[index]
+        pieces.append(token[start:end])
+        end = start
+    return list(reversed(pieces))
+
+
+def repair_question(text: str, place_words: set[str]) -> Repair:
+    """Split runs of letters written without spaces, then fix the spelling of the words.
+
+    `text` is an already normalised question. Only a long token that is not a known word is split, and
+    only into known words, so noise stays noise and a normal question is not touched.
+    """
+    known = RULE_WORDS | FUNCTION_WORDS | place_words
+    readings: list[tuple[str, str]] = []
+    tokens: list[str] = []
+    for token in text.split():
+        pieces = None
+        if len(token) >= MIN_SPLIT_LENGTH and token.isalpha() and token not in known:
+            pieces = segment(token, known)
+        if pieces and len(pieces) > 1:
+            readings.append((token[:120], " ".join(pieces)[:160]))
+            tokens.extend(pieces)
+        else:
+            tokens.append(token)
+    spelled = repair_words(" ".join(tokens), place_words)
+    return Repair(spelled.text, [*readings, *spelled.readings])
