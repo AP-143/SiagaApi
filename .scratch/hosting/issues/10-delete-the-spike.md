@@ -1,6 +1,6 @@
 # Delete the spike's leftovers
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 08
 
 ## What to do
@@ -9,6 +9,8 @@ Delete the Vercel project `siagaapi-spike`, the Neon branch `spike`, and the loc
 
 ## Acceptance criteria
 
-- [ ] Nothing of the spike remains on Vercel, Neon or disk.
+- [x] Nothing of the spike remains on Vercel, Neon or disk.
 
 ## Comments
+
+Deleted on 2026-10-30: Vercel project `siagaapi-spike`, Neon branch `spike`, and the spike folder and connection-string files in the scratchpad. `vercel project ls` shows `siagaapi` and `siagaapi-api`; `neon branches list` shows only `main`.

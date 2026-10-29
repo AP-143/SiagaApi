@@ -16,6 +16,8 @@ Spec: `../spec.md` (decisions 3, 5; "What the spike proved")
 - [x] A test shows a document named in `KNOWLEDGE_EXCLUDE` produces no passages, and a question about its topic gets the "not in our sources" reply.
 - [x] Measured on a throwaway Vercel project: bundle 441 MB (needs `VERCEL_SUPPORT_LARGE_FUNCTIONS=1`), warm requests 0.13 to 0.4 s in `sin1`, the first chat question that needs the model on a fresh instance several seconds.
 - [x] Concurrent starts no longer deadlock.
-- [ ] Repeat the deploy from the real `backend/` folder (ticket 08) and note the bundle size and the cold start after a long idle in the comments.
+- [x] Repeat the deploy from the real `backend/` folder (ticket 08) and note the bundle size and the cold start after a long idle in the comments.
 
 ## Comments
+
+Real deploy of `backend/` (project `siagaapi-api`, 2026-10-30): the build took 15 s (model copy 252 MB), Vercel reported "exceeds the standard size limit; enabling large functions (beta)" and went ahead. Warm requests 0.14 to 1.1 s from this machine in Indonesia; the first chat question needing the embedding model about 1 s. The cold start after a long idle is not measured yet (ticket 09).

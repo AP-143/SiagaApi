@@ -1,6 +1,6 @@
 # Go live: the two Vercel projects, the firewall rule and the secrets
 
-Status: ready-for-human
+Status: claimed
 Blocked by: 04, 05, 06, 07
 
 Spec: `../spec.md` (decisions 1, 3, 6, 7)
@@ -18,9 +18,13 @@ The agent does the rest: create the project `siagaapi-api` (root `backend/`, env
 
 ## Acceptance criteria
 
-- [ ] Both projects are deployed and the API's `/health` answers ok on the public address.
+- [x] Both projects are deployed and the API's `/health` answers ok on the public address.
 - [ ] If anything asks for a card or a billing address, the work stops and the owner is told.
 - [ ] No secret is printed in the terminal, committed, or visible in the built frontend.
-- [ ] The throwaway project `siagaapi-spike` and the Neon branch `spike` are deleted (ticket 10).
+- [x] The throwaway project `siagaapi-spike` and the Neon branch `spike` are deleted (ticket 10).
 
 ## Comments
+
+2026-10-30, done: project `siagaapi-api` (https://siagaapi-api.vercel.app, environment set from files) and project `siagaapi` (https://siagaapi.vercel.app); the WAF rule "Rate limit per IP" (200 requests per 60 s per IP) is published and was checked live (230 quick requests: 200 allowed, 30 answered 429); the owner approved the first public deploy; the spike is deleted.
+
+Still to do by the owner (the agent was not allowed to write to the secret store, and the FIRMS key can only be requested by the owner): request a new FIRMS MAP_KEY for the server, then add the repository secrets `DATABASE_URL` (the UNPOOLED Neon address) and `FIRMS_MAP_KEY` (Settings, Secrets and variables, Actions), then merge the pull request so the schedule starts.

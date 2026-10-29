@@ -12,8 +12,8 @@ The public site is free and needs no card. The reasons and the compromises are i
 
 | Part | Where | Settings live in |
 | --- | --- | --- |
-| Frontend | Vercel project, root `frontend/` | `VITE_API_BASE_URL` (project environment), `frontend/vercel.json` |
-| API | Vercel project, root `backend/`, region `sin1` | project environment (below), `backend/vercel.json`, `backend/pyproject.toml` |
+| Frontend | Vercel project `siagaapi` (https://siagaapi.vercel.app), root `frontend/` | `VITE_API_BASE_URL` (project environment), `frontend/vercel.json` |
+| API | Vercel project `siagaapi-api` (https://siagaapi-api.vercel.app), root `backend/`, region `sin1` | project environment (below), `backend/vercel.json`, `backend/pyproject.toml` |
 | Database | Neon project `siagaapi`, branch `main` | the Neon console |
 | Ingestor | `.github/workflows/ingest.yml` | repository secrets `DATABASE_URL` (unpooled) and `FIRMS_MAP_KEY` |
 
@@ -28,7 +28,7 @@ The public site is free and needs no card. The reasons and the compromises are i
 | `CORS_ALLOWED_ORIGINS` | the frontend's address, for example `https://siagaapi.vercel.app` | the two projects are different origins |
 | `VERCEL_SUPPORT_LARGE_FUNCTIONS` | `1` | the bundle (441 MB, of which the embedding model is 252 MB) needs Large Functions (beta) |
 
-`LLM_BASE_URL` stays empty: the chat runs on rules and the embedding search. There is also one Vercel WAF rate-limit rule (per IP, for example 100 requests per 60 seconds), made in the dashboard under Firewall; Hobby allows one.
+`LLM_BASE_URL` stays empty: the chat runs on rules and the embedding search. There is also one Vercel WAF rate-limit rule (per IP, 200 requests per 60 seconds, made with `vercel firewall rules add` and published), made in the dashboard under Firewall; Hobby allows one.
 
 ## Seed the database (once, from your laptop)
 
