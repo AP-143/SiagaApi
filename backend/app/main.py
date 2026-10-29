@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
@@ -51,8 +52,11 @@ def create_app(
     model: ModelClient | None = None,
     model_calls_per_minute: int | None = None,
     model_calls_per_day: int | None = None,
+    trust_forwarded_for: bool | None = None,
 ) -> FastAPI:
     settings = load_settings()
+    if trust_forwarded_for is None:
+        trust_forwarded_for = settings.trust_forwarded_for
     if model is None and settings.llm_base_url:
         model = OpenAICompatibleClient(
             settings.llm_base_url,
@@ -83,7 +87,8 @@ def create_app(
                 ensure_schema(conn)
                 # A broken document stops the start-up on purpose: better a loud failure at
                 # deploy time than a chat that quietly answers from a half-loaded knowledge base.
-                load_knowledge(conn, settings.knowledge_dir)
+                if settings.knowledge_reload_on_start:
+                    load_knowledge(conn, settings.knowledge_dir, settings.knowledge_exclude)
         except BaseException:
             pool.close()
             raise
@@ -99,9 +104,12 @@ def create_app(
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
         # Health checks come from the platform, not from the public. The client address is the
-        # socket peer: X-Forwarded-For is client-controlled and would let anyone dodge the limit.
+        # socket peer: X-Forwarded-For is client-controlled and would let anyone dodge the limit,
+        # unless the API is told it sits behind a proxy that adds the real address on the right.
         if request.url.path != "/health":
             client = request.client.host if request.client else "unknown"
+            if trust_forwarded_for:
+                client = request.headers.get("x-forwarded-for", "").split(",")[-1].strip() or client
             is_chat = request.url.path == "/chat" and request.method == "POST"
             retry_after = (chat_limiter if is_chat else limiter).check(client)
             if retry_after is not None:
@@ -111,6 +119,17 @@ def create_app(
                     headers={"Retry-After": str(retry_after)},
                 )
         return await call_next(request)
+
+    if settings.cors_allowed_origins:
+        # Added last so it is the outermost layer: a 429 must carry the headers too, or the page
+        # could not read it. Read-only API, so GET plus the chat's POST, and never credentials.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(settings.cors_allowed_origins),
+            allow_methods=["GET", "POST"],
+            allow_headers=["Content-Type"],
+            expose_headers=["Retry-After"],
+        )
 
     @app.get("/health")
     def health(request: Request, response: Response):
