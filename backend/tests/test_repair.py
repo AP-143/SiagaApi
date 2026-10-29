@@ -33,3 +33,20 @@ def test_a_message_at_the_limit_is_split_quickly():
 
     assert pieces is not None and pieces[:2] == ["titik", "api"]
     assert time.perf_counter() - start < 1.0
+
+
+from app.chat.repair import repair_words
+
+
+def test_a_missing_extra_or_swapped_letter_is_repaired():
+    vocab = {"masker", "hotspot", "terakhir"}
+    assert repair_words("maskr", set(), vocab).text == "masker"      # a letter missing
+    assert repair_words("maskerr", set(), vocab).text == "masker"    # a letter too many
+    assert repair_words("hotpsot", set(), vocab).text == "hotspot"   # two letters swapped
+
+
+def test_an_ordinary_word_one_substituted_letter_from_a_known_word_is_left_alone():
+    # "susah" is a real word; "sudah" is a different real word, so changing it would be a guess.
+    vocab = {"sudah", "berapa", "bulan", "kapan"}
+    for word in ["susah", "berada", "bulat", "kapal"]:
+        assert repair_words(word, set(), vocab).text == word

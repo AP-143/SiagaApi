@@ -48,13 +48,24 @@ class Repair:
     readings: list[tuple[str, str]] = field(default_factory=list)
 
 
+def _is_one_substitution(word: str, candidate: str) -> bool:
+    """True when the two words differ in exactly one letter and have the same length."""
+    return len(word) == len(candidate) and sum(a != b for a, b in zip(word, candidate)) == 1
+
+
 def _nearest(word: str, vocabulary: dict[str, str]) -> str | None:
-    """The one vocabulary word within the allowed distance of `word`, or None (none, or a tie)."""
+    """The one vocabulary word within the allowed distance of `word`, or None (none, or a tie).
+
+    A word one substituted letter from a known word is not a candidate: "susah" and "sudah", "bulat" and
+    "bulan" are both real words, so changing one into the other would be a guess.
+    """
     best: int | None = None
     found: set[str] = set()
     for candidate in vocabulary:
         if candidate[0] != word[0]:
             continue  # a slip rarely changes the first letter
+        if _is_one_substitution(word, candidate):
+            continue
         distance = edit_distance(word, candidate, allowed_distance(len(candidate)))
         if distance is None:
             continue
@@ -65,15 +76,19 @@ def _nearest(word: str, vocabulary: dict[str, str]) -> str | None:
     return next(iter(found)) if len(found) == 1 else None
 
 
-def repair_words(text: str, place_words: set[str]) -> Repair:
+def repair_words(text: str, place_words: set[str], document_words: frozenset[str] | set[str] = frozenset()) -> Repair:
     """Fix the spelling of the words of an already normalised question.
 
     `place_words` are the words of the known place names. A word nearest one of those is left alone,
     because the place repair reads it, and a word that is already a place word is never changed.
+    `document_words` (given only for a question about a term) are the words of the reviewed documents:
+    a word nearest exactly one of them is read as it, so "maskr" finds the passage about "masker".
     """
     vocabulary = {word: "rule" for word in RULE_WORDS}
     for word in place_words:
         vocabulary.setdefault(word, "place")
+    for word in document_words:
+        vocabulary.setdefault(word, "document")
     words: list[str] = []
     typed: list[str] = []
     read: list[str] = []
@@ -81,7 +96,7 @@ def repair_words(text: str, place_words: set[str]) -> Repair:
         replacement = SHORT_FORMS.get(word)
         if replacement is None and len(word) >= MIN_REPAIRABLE and word not in vocabulary and word.isalpha():
             candidate = _nearest(word, vocabulary)
-            if candidate is not None and vocabulary[candidate] == "rule":
+            if candidate is not None and vocabulary[candidate] in ("rule", "document"):
                 replacement = candidate
         if replacement is not None and replacement != word:
             typed.append(word)
@@ -141,13 +156,15 @@ def segment(token: str, words: set[str]) -> list[str] | None:
     return list(reversed(pieces))
 
 
-def repair_question(text: str, place_words: set[str]) -> Repair:
+def repair_question(
+    text: str, place_words: set[str], document_words: frozenset[str] | set[str] = frozenset()
+) -> Repair:
     """Split runs of letters written without spaces, then fix the spelling of the words.
 
     `text` is an already normalised question. Only a long token that is not a known word is split, and
     only into known words, so noise stays noise and a normal question is not touched.
     """
-    known = RULE_WORDS | FUNCTION_WORDS | place_words
+    known = RULE_WORDS | FUNCTION_WORDS | place_words | set(document_words)
     readings: list[tuple[str, str]] = []
     tokens: list[str] = []
     for token in text.split():
@@ -159,5 +176,5 @@ def repair_question(text: str, place_words: set[str]) -> Repair:
             tokens.extend(pieces)
         else:
             tokens.append(token)
-    spelled = repair_words(" ".join(tokens), place_words)
+    spelled = repair_words(" ".join(tokens), place_words, document_words)
     return Repair(spelled.text, [*readings, *spelled.readings])

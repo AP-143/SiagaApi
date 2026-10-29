@@ -206,6 +206,19 @@ def search_knowledge(conn: psycopg.Connection, question: str, limit: int = MAX_P
     return found[:limit]
 
 
+def document_words(conn: psycopg.Connection) -> set[str]:
+    """The words (letters only, four or more) of the loaded documents, for reading a misspelled term.
+
+    Character similarity is done here, against this vocabulary, with the same rules as every other
+    repair (one nearest word, a tie is no repair), rather than with pg_trgm: no extension or schema step,
+    and the same behaviour in tests and in production.
+    """
+    words: set[str] = set()
+    for heading, body in conn.execute("SELECT heading, body FROM knowledge_chunks"):
+        words.update(re.findall(r"[a-z]{4,}", f"{heading} {body}".lower()))
+    return words
+
+
 def is_too_short_to_stand_alone(conn: psycopg.Connection, question: str) -> bool:
     """True for a question with so few meaningful words ("kalau seminggu?", "bagaimana dengan Kalimantan
     Barat?") that it may only make sense as a follow-up, and a passage found for it is a guess."""

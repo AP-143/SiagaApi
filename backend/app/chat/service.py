@@ -8,7 +8,7 @@ from app.chat.explain import ExplanationCache, grounded_explanation
 from app.chat.model import ModelClient, ModelUnavailable
 from app.chat.model_intent import question_from_model, rewrite_follow_up
 from app.chat.places import PlaceIndex, normalize
-from app.chat.repair import repair_question
+from app.chat.repair import repair_question, repair_words
 from app.chat.understanding import (
     Intent,
     Question,
@@ -18,7 +18,7 @@ from app.chat.understanding import (
     asks_for_an_explanation,
     understand,
 )
-from app.knowledge import Passage, is_too_short_to_stand_alone, search_knowledge
+from app.knowledge import Passage, document_words, is_too_short_to_stand_alone, search_knowledge
 
 
 def _filters(scope: Scope, now: datetime) -> tuple[str, list]:
@@ -111,6 +111,11 @@ def _from_rules_or_documents(
     return _explain(message, passages, places, model, cache) if passages else None
 
 
+def _asks_for_an_explanation(typed: str, places: PlaceIndex) -> bool:
+    """True when a normalised question asks for an explanation, even if the asking word is misspelled."""
+    return asks_for_an_explanation(typed) or asks_for_an_explanation(repair_words(typed, places.words).text)
+
+
 def _read_again_repaired(
     conn: psycopg.Connection,
     message: str,
@@ -121,15 +126,12 @@ def _read_again_repaired(
 ) -> dict | None:
     """The reply for the question with its spelling and spacing repaired, or None when repair changed nothing
     or the repaired question is not one we can answer either."""
+    if _asks_for_an_explanation(normalize(message), places):
+        return None  # a question about a term was already repaired for the documents; never read as a count
     repair = repair_question(normalize(message), places.words)
     if not repair.readings:
         return None
-    if asks_for_an_explanation(normalize(message)):
-        # A question about a term may only find its document again; a repair never turns it into a count.
-        passages = search_knowledge(conn, repair.text)
-        reply = _explain(repair.text, passages, places, model, cache) if passages else None
-    else:
-        reply = _from_rules_or_documents(conn, repair.text, now, places, model, cache)
+    reply = _from_rules_or_documents(conn, repair.text, now, places, model, cache)
     if reply is None or reply.get("kind") in ("unsupported", "unsupported_window"):
         return None
     return _with_reading_note(reply, repair.readings)
@@ -157,15 +159,23 @@ def answer_question(
     # Not a question about the numbers: it may be one the reviewed documents can answer. But after
     # earlier turns a very short question ("bagaimana dengan Kalimantan Barat?") is most likely a
     # follow-up, and a passage that happens to share its few words is a guess, so it is read as one first.
-    passages = search_knowledge(conn, message)
+    # A question about a term is first repaired with the words of the documents ("maskr" -> "masker"),
+    # so that a slip does not hide the passage; the repaired text is what is searched, and the reply
+    # says how it was read. A question with nothing to repair is searched as typed.
+    typed = normalize(message)
+    explanation = _asks_for_an_explanation(typed, places)
+    repair = repair_question(typed, places.words, document_words(conn)) if explanation else None
+    readings = repair.readings if repair is not None else []
+    query = repair.text if readings and repair is not None else message
+    passages = search_knowledge(conn, query)
     # Only a fragment is read as a follow-up: a complete question about something else must not be bent,
     # with the context of earlier turns, into one that the documents happen to answer.
     follow_up = model is not None and bool(history) and is_too_short_to_stand_alone(conn, message)
     if passages and not follow_up:
-        return _explain(message, passages, places, model, cache)
+        return _with_reading_note(_explain(query, passages, places, model, cache), readings)
 
-    # Nothing yet: perhaps it was typed without spaces or with slips. Read it again, repaired from our
-    # own vocabulary, by the rules and by the documents, and say how it was read.
+    # Nothing yet: perhaps it was typed without spaces. Read it again, repaired from our own
+    # vocabulary, by the rules and by the documents, and say how it was read.
     if not passages:
         repaired = _read_again_repaired(conn, message, now, places, model, cache)
         if repaired is not None:
