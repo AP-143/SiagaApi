@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import Hero from "./Hero";
+import Notice from "./Notice";
 import PhotoCredits from "./PhotoCredits";
 import QuickFacts from "./QuickFacts";
 import Statement from "./Statement";
@@ -22,6 +23,7 @@ export default function Landing() {
       <Statement />
       <QuickFacts />
       <PhotoCredits />
+      <Notice />
     </main>
   );
 }

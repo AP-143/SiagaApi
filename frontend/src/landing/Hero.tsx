@@ -1,6 +1,7 @@
 import { m, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 
+import { withBase } from "../base";
 import LogoMark from "../LogoMark";
 import { HeroSlideDots, HeroSlideImages, useHeroSlides } from "./HeroSlides";
 import { LANDING_IMAGES } from "./images";
@@ -118,7 +119,7 @@ export default function Hero() {
 
       <m.div className="hero-pill-slot" style={{ opacity: pillOpacity }}>
         <Reveal from={{ opacity: 0, y: 18 }} delay={1.05}>
-          <a className="hero-pill" href="/peta">
+          <a className="hero-pill" href={withBase("/peta")}>
             <span className="hero-pill-pin">
               <PinIcon />
             </span>
@@ -144,7 +145,7 @@ export default function Hero() {
           </span>
           <span className="hero-nav-tagline">Pemantau titik api Kalimantan</span>
         </div>
-        <a className="hero-nav-link" href="/peta">
+        <a className="hero-nav-link" href={withBase("/peta")}>
           Buka peta <ArrowIcon />
         </a>
       </Reveal>
