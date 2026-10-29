@@ -93,3 +93,5 @@ Add a **Landing**: a light-only, scrolling editorial page at `/` with three full
 - Bodoni Moda is loaded from Google Fonts like Barlow was; self-hosting the fonts is part of the hosting work.
 - The body has `height: 100%` and the map fills the viewport. The Landing scrolls normally, so the global rules must not leak between the two views (ticket 01).
 - A hotspot is a satellite signal, not a confirmed fire (GLOSSARY). The Landing's copy must never call a Hotspot a confirmed fire.
+
+- **Hero embers** (added 2026-10-29 at the owner's request, so the hero is not static): `frontend/src/landing/Embers.tsx` draws 36 to 90 glowing specks (fewer on a phone) that drift up over the photograph on a canvas inside the hero layer, so they melt away with the photograph on scroll. They fade in, glow and die, and cool from yellow-white to red. Decoration only: hidden from assistive technology, not drawn for `prefers-reduced-motion`, and drawing stops while the canvas is off screen or the tab is in the background.

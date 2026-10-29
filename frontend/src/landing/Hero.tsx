@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import LogoMark from "../LogoMark";
 import ImageSlot from "./ImageSlot";
+import Embers from "./Embers";
 import { LANDING_IMAGES } from "./images";
 import Reveal from "./Reveal";
 import SplitText from "./SplitText";
@@ -93,6 +94,7 @@ export default function Hero() {
             />
             {/* A soft dark veil keeps the light title readable over the glow of the fire. */}
             <div className="hero-veil" aria-hidden="true" />
+            <Embers />
           </m.div>
 
           <div className="hero-title">
