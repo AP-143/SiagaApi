@@ -55,3 +55,11 @@ _Avoid_: Offline mode, degraded mode
 **Landing**:
 The scrolling editorial page at `/` that explains what a Hotspot is and where the data comes from, and leads to the map. It is always light and shows no live numbers. The map itself lives at `/peta`.
 _Avoid_: Home page, splash page, marketing page
+
+**Reading note**:
+The one plain sentence under a chat answer that says how a misspelled or unspaced question was read ("Saya membaca 'kalimantan tengh' sebagai Kalimantan Tengah."). It appears only when something was repaired, and is never part of model-written text.
+_Avoid_: Correction notice, autocorrect message
+
+**Repaired question**:
+A question whose spelling and spacing were fixed, first by code with the chat's own vocabulary, and only if that is not enough by the language model, before the rules read it. A repair never invents a place or a number and never chooses between two equally close names.
+_Avoid_: Cleaned question, normalized question (when the repair of typos or missing spaces is meant)
