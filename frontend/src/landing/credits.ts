@@ -8,6 +8,20 @@ export const PHOTO_CREDITS = [
     source: "https://commons.wikimedia.org/wiki/File:Pioneer_Fire_-_Night_-_Flames_fury_burn_trees.jpg",
   },
   {
+    subject: "Howe Ridge Fire menyala di seberang Danau McDonald pada malam hari, Glacier National Park, AS",
+    author: "Glacier National Park (National Park Service)",
+    license: "Domain publik",
+    licenseUrl: null,
+    source: "https://commons.wikimedia.org/wiki/File:Howe_Ridge_Fire_2018_(29082529537).jpg",
+  },
+  {
+    subject: "Carpenter Fire membakar lereng bukit pada malam hari, Toiyabe National Forest, Nevada, AS",
+    author: "U.S. Forest Service (USDA)",
+    license: "Domain publik",
+    licenseUrl: null,
+    source: "https://commons.wikimedia.org/wiki/File:20130701-FS-UNK-0003_(9291980691).jpg",
+  },
+  {
     subject: "Kebakaran hutan Pioneer Fire dilihat dari udara pada malam hari, Idaho, AS",
     author: "U.S. Forest Service (USDA)",
     license: "Domain publik",

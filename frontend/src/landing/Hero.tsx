@@ -2,8 +2,7 @@ import { m, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 
 import LogoMark from "../LogoMark";
-import ImageSlot from "./ImageSlot";
-import Embers from "./Embers";
+import { HeroSlideDots, HeroSlideImages, useHeroSlides } from "./HeroSlides";
 import { LANDING_IMAGES } from "./images";
 import Reveal from "./Reveal";
 import SplitText from "./SplitText";
@@ -59,6 +58,7 @@ const clamp = (value: number) => Math.min(1, Math.max(0, value));
 export default function Hero() {
   const reduced = useReducedMotion();
   const phone = useIsPhone();
+  const slides = useHeroSlides(LANDING_IMAGES.heroSlides.length);
   const { scrollY } = useScroll();
   const melt = useTransform(scrollY, (y) => clamp(y / (0.6 * window.innerHeight)));
 
@@ -83,18 +83,9 @@ export default function Hero() {
       <div className="hero-frame">
         <m.div className="hero-stage" style={{ y: drift }}>
           <m.div className="hero-layer" style={{ filter: blur, opacity: fade }} {...settle}>
-            <ImageSlot
-              src={LANDING_IMAGES.heroImage}
-              srcSet={LANDING_IMAGES.heroImageSet}
-              sizes="100vw"
-              width={3840}
-              height={2171}
-              priority
-              fallback={null}
-            />
+            <HeroSlideImages slides={LANDING_IMAGES.heroSlides} current={slides.current} previous={slides.previous} />
             {/* A soft dark veil keeps the light title readable over the glow of the fire. */}
             <div className="hero-veil" aria-hidden="true" />
-            <Embers />
           </m.div>
 
           <div className="hero-title">
@@ -115,6 +106,15 @@ export default function Hero() {
           </div>
         </m.div>
       </div>
+
+      <m.div className="hero-dots-slot" style={{ opacity: pillOpacity }}>
+        <HeroSlideDots
+          count={LANDING_IMAGES.heroSlides.length}
+          current={slides.current}
+          auto={slides.auto}
+          go={slides.go}
+        />
+      </m.div>
 
       <m.div className="hero-pill-slot" style={{ opacity: pillOpacity }}>
         <Reveal from={{ opacity: 0, y: 18 }} delay={1.05}>
