@@ -88,3 +88,70 @@ def test_the_default_questions_cover_every_kind_of_thing_the_ai_does():
 
     assert {"explanation", "synonym", "uncovered", "free-form", "follow-up", "greeting", "hostile"} <= groups
     assert len(default_cases()) >= 70
+
+
+# ---- The repair evaluation ----------------------------------------------------------------------------
+
+from app.model_eval import REPAIR_GROUPS, format_repair_report, repair_cases, run_repair_cases  # noqa: E402
+
+
+def test_the_repair_questions_cover_every_kind_of_slip_and_the_dangerous_cases():
+    cases = repair_cases()
+
+    assert {case.group for case in cases} == set(REPAIR_GROUPS)
+    assert len(cases) >= 30
+
+
+def test_a_repair_question_is_asked_with_code_alone_and_then_with_the_model(conn):
+    model = FakeModel()
+    model.will_say("berapa titik api di Sambas hari ini")  # the one question the code could not read
+    cases = [
+        Case("repair-short-form", "brp titik api di sambas", kind="count", area="Sambas"),
+        Case("repair-letters", "brapa ttk apii di sambas hri ini", kind="count", area="Sambas"),
+    ]
+
+    results = run_repair_cases(conn, model, cases, NOW)
+
+    assert [(r.code_ok, r.model_ok) for r in results] == [(True, True), (False, True)]
+    assert [r.gained for r in results] == [False, True]
+    assert [r.model_calls for r in results] == [0, 1]
+    assert not any(r.wrong for r in results)
+
+
+def test_a_model_that_turns_a_question_into_another_answer_is_reported_as_wrong(conn):
+    model = FakeModel()
+    model.will_say("berapa titik api di Sambas hari ini")  # the person wrote no place
+    cases = [Case("repair-danger", "brapa ttk apii hri ini", kind="unsupported")]
+
+    # The place check keeps this from reaching the person; the evaluation must still be able to see a wrong
+    # reply if one ever did, so the judgement is tested on the result itself.
+    results = run_repair_cases(conn, model, cases, NOW)
+
+    assert results[0].model_ok is True and results[0].wrong is False
+
+    from app.model_eval import RepairResult
+
+    wrong = RepairResult(
+        case=cases[0], code_ok=True, model_ok=False, code_kind="unsupported", model_kind="count",
+        changed_by_model=True, model_calls=1, simple_mode=False, seconds=0.1, note="got count, wanted unsupported",
+    )
+    assert wrong.wrong is True and wrong.unused is False
+
+
+def test_the_repair_report_counts_per_group_and_names_what_went_wrong(conn):
+    model = FakeModel()
+    model.will_say("", "berapa titik api di Sambas hari ini")
+    cases = [
+        Case("repair-letters", "brapa ttk apii di sambas hri ini", kind="count", area="Sambas"),
+        Case("repair-letters", "brapa ttk apii di sambas hri", kind="count", area="Sambas"),
+        Case("repair-no-spaces", "titikapidisambas", kind="count", area="Sambas"),
+    ]
+
+    report = format_repair_report("kecil-3b", run_repair_cases(conn, model, cases, NOW))
+
+    assert "kecil-3b" in report
+    assert "All: code alone 1/3 | with the model 2 | gained 1 | wrong 0 | asked but not used 1" in report
+    assert "repair-letters: code alone 0/2 | with the model 1 | gained 1" in report
+    assert "repair-no-spaces: code alone 1/1" in report
+    assert "FAIL " in report and "brapa ttk apii di sambas hri ini ->" in report
+    assert "titikapidisambas" not in report  # a question that was right is not repeated

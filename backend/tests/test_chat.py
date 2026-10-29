@@ -643,3 +643,17 @@ def test_a_properly_spaced_question_is_not_touched_by_the_splitting(world):
     reply = ask(world, "Berapa titik api di Kalimantan Utara hari ini?")
 
     assert "read_as" not in reply["data"]
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "kabupaten dengan titik api terbanyak",
+        "kabupaten dengan titk api terbanyk",  # found by the repair evaluation: "dengan" was read as a place
+        "provinsi yang paling banyak titik apinya",
+    ],
+)
+def test_a_connecting_word_after_kabupaten_or_provinsi_is_not_taken_for_a_place(world, question):
+    reply = ask(world, question)
+
+    assert reply["kind"] == "ranking", reply

@@ -68,7 +68,7 @@ The model measured best so far is `qwen2.5:3b` (see `docs/chatbot.md`): `ollama 
 docker compose run --rm api python -m app.cli evaluate-model --model <model> [--verbose]
 ```
 
-It asks about a hundred questions (explanations, synonyms, questions the documents do not cover, free-form counts, follow-ups, greetings and hostile ones) and prints how many the chat got right per group, how many calls failed, and how long it took. Results and the chosen default are in `docs/chatbot.md`.
+It asks about a hundred questions (explanations, synonyms, questions the documents do not cover, free-form counts, follow-ups, greetings and hostile ones) and prints how many the chat got right per group, how many calls failed, and how long it took. Results and the chosen default are in `docs/chatbot.md`. Add `--repair` to run only the misspelled and unspaced questions, each with and without the model.
 
 **A hosted API**: set the same three variables to its address, model and key (for example Groq, OpenRouter or Cloudflare Workers AI). Free tiers have limits for the whole application, and some use prompts for training, so read the provider's terms first and never put a key in the repository.
 

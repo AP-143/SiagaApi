@@ -13,12 +13,16 @@ from app.knowledge import KnowledgeError, load_knowledge
 from app.peatlands import load_peatlands_from_file
 
 
-def evaluate_model(model_name: str | None, verbose: bool) -> None:
-    """Run the evaluation questions through the model configured in LLM_* and print how it did."""
+def evaluate_model(model_name: str | None, verbose: bool, repair: bool = False) -> None:
+    """Run the evaluation questions through the model configured in LLM_* and print how it did.
+
+    With `repair`, only the spelling and spacing questions are run, each with and without the model."""
     from datetime import datetime, timezone
 
     from app.chat.model_http import OpenAICompatibleClient
-    from app.model_eval import default_cases, format_report, run_cases
+    from app.model_eval import (
+        default_cases, format_repair_report, format_report, repair_cases, run_cases, run_repair_cases,
+    )
 
     settings = load_settings()
     name = model_name or settings.llm_model
@@ -28,7 +32,11 @@ def evaluate_model(model_name: str | None, verbose: bool) -> None:
     try:
         with psycopg.connect(settings.database_url) as conn:
             load_knowledge(conn, settings.knowledge_dir)  # the questions are asked of the real documents
-            results = run_cases(conn, model, default_cases(), datetime.now(timezone.utc))
+            now = datetime.now(timezone.utc)
+            if repair:
+                print(format_repair_report(name, run_repair_cases(conn, model, repair_cases(), now), verbose))
+                return
+            results = run_cases(conn, model, default_cases(), now)
     except KnowledgeError as error:
         raise SystemExit(f"Knowledge not loaded: {error}")
     print(format_report(name, results, verbose))
@@ -76,6 +84,10 @@ def main() -> None:
     )
     evaluate.add_argument("--model", help="Model name to use instead of LLM_MODEL")
     evaluate.add_argument("--verbose", action="store_true", help="List every question, not only the ones that went wrong")
+    evaluate.add_argument(
+        "--repair", action="store_true",
+        help="Run only the misspelled and unspaced questions, each with and without the model",
+    )
 
     ingest = commands.add_parser("ingest", help="Fetch Hotspots from NASA FIRMS")
     ingest.add_argument(
@@ -110,7 +122,7 @@ def main() -> None:
             raise SystemExit(f"Knowledge not loaded: {error}")
         print(f"Loaded {count} passages from {directory}.")
     elif args.command == "evaluate-model":
-        evaluate_model(args.model, args.verbose)
+        evaluate_model(args.model, args.verbose, args.repair)
     elif args.command == "ingest":
         settings = load_settings()
         if args.loop:

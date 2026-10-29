@@ -28,6 +28,7 @@ NOT_PLACE_WORDS = {
     "itu", "antara", "dalam", "atas", "bawah", "area", "wilayah", "daerah", "kepercayaan",
     "rendah", "kabupaten", "kota", "provinsi", "jam", "minggu", "pekan", "bulan", "tahun",
     "kawasan", "tiap", "setiap", "masing", "saya", "kami", "kita",
+    "dengan", "yang", "paling", "dan", "atau",  # "kabupaten dengan titik api terbanyak" names no place
 }
 
 PLACE_AFTER = re.compile(r"\b(?:di|ke|dekat|sekitar|wilayah|daerah|kota|kabupaten|provinsi)\s+([a-z]+(?:\s[a-z]+)?)")
