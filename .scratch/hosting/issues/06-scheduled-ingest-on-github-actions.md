@@ -1,6 +1,6 @@
 # The ingestor runs on a GitHub Actions schedule
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 05
 
 Spec: `../spec.md` (decisions 6, 8); the secrets themselves are set in ticket 08.
@@ -13,8 +13,10 @@ Use the unpooled URL for the secret. Note in the workflow comments that Actions 
 
 ## Acceptance criteria
 
-- [ ] The workflow file passes a syntax check (`actionlint` or equivalent) and does only what is described above.
+- [x] The workflow file passes a syntax check (`actionlint` or equivalent) and does only what is described above.
 - [ ] Once the secrets are set, a manual run succeeds and the log shows the fetched and stored counts, not any secret.
-- [ ] A short section in `docs/hosting.md` explains how to see the last run, run it by hand, and turn it back on after the 60 day pause.
+- [x] A short section in `docs/hosting.md` explains how to see the last run, run it by hand, and turn it back on after the 60 day pause.
 
 ## Comments
+
+Written (`.github/workflows/ingest.yml`) and linted clean with actionlint. Still to do after the merge to `main` and the secrets in ticket 08: one manual run, and the second run from the schedule.

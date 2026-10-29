@@ -1,6 +1,6 @@
 # Seed the Neon database once from the laptop
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 04
 
 Spec: `../spec.md` (decisions 5, 6, 7)
@@ -13,8 +13,12 @@ Never print or commit `.env` or any connection string; read the URL from the env
 
 ## Acceptance criteria
 
-- [ ] PostGIS is enabled, the five Provinces and the Peatlands are loaded, and the knowledge passages do not include the health documents.
-- [ ] The database size after the seed and after one ingest is written down (limit: 0.5 GB), with a rough estimate of how many months of Hotspots fit.
-- [ ] The commands can be repeated safely (a second run changes nothing).
+- [x] PostGIS is enabled, the five Provinces and the Peatlands are loaded, and the knowledge passages do not include the health documents.
+- [x] The database size after the seed and after one ingest is written down (limit: 0.5 GB), with a rough estimate of how many months of Hotspots fit.
+- [x] The commands can be repeated safely (a second run changes nothing).
 
 ## Comments
+
+Done with `scripts/seed-remote.sh` (a pooled address is refused, the address is never printed, a dry run lists the steps) and `docs/hosting.md`. Run on Neon `main` on 2026-10-30: 5 Provinces, 56 Regencies, 146 Peatland polygons, 23 passages (no health texts), 3,527 Hotspots (927 on peat), none outside a Province. Database size 40 MB of 500 MB. The loaders are upserts or whole replacements, so a repeat changes nothing. The first Hotspot fetch used the laptop key; the server key is set in ticket 08.
+
+Verified by running the seed a second time (without the Hotspot fetch): every count was the same as after the first run.
