@@ -4,8 +4,8 @@
  */
 export const LANDING_IMAGES = {
   heroImage: "/landing/hero-night.webp" as string | null,
-  /** The hero in two sizes; the browser picks by screen width. */
-  heroImageSet: "/landing/hero-night-1600.webp 1600w, /landing/hero-night.webp 3060w" as string | undefined,
+  /** The hero in three sizes; the browser picks by screen width. */
+  heroImageSet: "/landing/hero-night-1600.webp 1600w, /landing/hero-night-2560.webp 2560w, /landing/hero-night.webp 3840w" as string | undefined,
   pillSatellite: "/landing/pill-satellite.webp" as string | null,
   pillFire: "/landing/pill-fire.webp" as string | null,
   portrait: "/landing/portrait-night.webp" as string | null,

@@ -1,11 +1,11 @@
 /** Who to thank for each photograph, shown under the Landing as the licences require. */
 export const PHOTO_CREDITS = [
   {
-    subject: "Kebakaran hutan Lick Fire di malam hari, Umatilla National Forest, AS",
-    author: "U.S. Forest Service, Pacific Northwest Region",
+    subject: "Api membakar pohon pada malam hari, Pioneer Fire, Boise National Forest, Idaho, AS",
+    author: "U.S. Forest Service (USDA)",
     license: "Domain publik",
     licenseUrl: null,
-    source: "https://commons.wikimedia.org/wiki/File:Lick_Fire_on_the_Umatilla_National_Forest_burning_at_night.jpg",
+    source: "https://commons.wikimedia.org/wiki/File:Pioneer_Fire_-_Night_-_Flames_fury_burn_trees.jpg",
   },
   {
     subject: "Kebakaran hutan Pioneer Fire dilihat dari udara pada malam hari, Idaho, AS",

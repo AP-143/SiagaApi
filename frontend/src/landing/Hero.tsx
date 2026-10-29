@@ -86,8 +86,8 @@ export default function Hero() {
               src={LANDING_IMAGES.heroImage}
               srcSet={LANDING_IMAGES.heroImageSet}
               sizes="100vw"
-              width={3060}
-              height={1730}
+              width={3840}
+              height={2171}
               priority
               fallback={null}
             />
