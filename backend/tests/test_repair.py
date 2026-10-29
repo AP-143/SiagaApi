@@ -50,3 +50,17 @@ def test_an_ordinary_word_one_substituted_letter_from_a_known_word_is_left_alone
     vocab = {"sudah", "berapa", "bulan", "kapan"}
     for word in ["susah", "berada", "bulat", "kapal"]:
         assert repair_words(word, set(), vocab).text == word
+
+
+from app.chat.repair import looks_damaged
+
+
+def test_a_question_with_a_nearly_known_word_or_a_very_long_run_of_letters_looks_damaged():
+    assert looks_damaged("brapa ttk apii di sambas", {"sambas"})
+    assert looks_damaged("apa yang sebaiknya dilakukan saat kbut", {"sambas"}, {"kabut", "asap"})
+    assert looks_damaged("a" * 15, set())
+
+
+def test_a_well_written_question_about_something_else_does_not_look_damaged():
+    assert not looks_damaged("bagaimana cara membuat kue brownies yang enak", {"sambas"})
+    assert not looks_damaged("obat apa yang bagus untuk batuk akibat asap", {"sambas"}, {"asap"})

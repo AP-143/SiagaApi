@@ -156,6 +156,43 @@ def segment(token: str, words: set[str]) -> list[str] | None:
     return list(reversed(pieces))
 
 
+MIN_DAMAGED_WORD = 3  # a shorter word is too often a real one to say anything
+LONGEST_PLAIN_WORD = 15  # a longer run of letters is almost surely words written without spaces
+
+
+def _is_subsequence(short: str, long: str) -> bool:
+    letters = iter(long)
+    return all(letter in letters for letter in short)
+
+
+def _nearly(word: str, other: str) -> bool:
+    """True when `word` could be `other` typed badly: a letter off, or letters left out ("ttk" for "titik")."""
+    if edit_distance(word, other, 2 if len(word) >= 7 else 1) is not None:
+        return True
+    return word[0] == other[0] and 1 <= len(other) - len(word) <= 2 and _is_subsequence(word, other)
+
+
+def looks_damaged(
+    text: str, place_words: set[str], document_words: frozenset[str] | set[str] = frozenset()
+) -> bool:
+    """True when a normalised question has a sign of bad spelling or spacing that code could not repair.
+
+    A word that is nearly, but not exactly, a word the rules or the documents use ("ttk", "kbut"), or a very
+    long run of letters. It only decides whether the model is worth asking; a well-written question about
+    something else shows no sign, so it costs no model call.
+    """
+    known = RULE_WORDS | FUNCTION_WORDS | place_words | set(document_words)
+    comparable = [word for word in RULE_WORDS | set(document_words) if len(word) >= 4]
+    for word in text.split():
+        if not word.isalpha() or word in known:
+            continue
+        if len(word) >= LONGEST_PLAIN_WORD:
+            return True
+        if len(word) >= MIN_DAMAGED_WORD and any(_nearly(word, other) for other in comparable):
+            return True
+    return False
+
+
 def repair_question(
     text: str, place_words: set[str], document_words: frozenset[str] | set[str] = frozenset()
 ) -> Repair:

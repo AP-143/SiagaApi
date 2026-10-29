@@ -49,7 +49,7 @@ cd frontend && npm install && npm test
 
 ## Chat language model (optional)
 
-The chat works on rules alone. A language model, when configured, helps it understand questions the rules cannot read; numbers and places still come from the database (`docs/adr/0003-ai-layer-is-optional-grounded-and-swappable.md`). With no model, or when the model fails, the chat falls back to the rules and says it is in simple mode.
+The chat works on rules alone, and reads common typos, short forms and questions typed without spaces by code, with no model. A language model, when configured, helps it understand questions the rules cannot read, including badly misspelled ones (it only rewrites the spelling and spacing; the rules read the rewrite); numbers and places still come from the database (`docs/adr/0003-ai-layer-is-optional-grounded-and-swappable.md`). With no model, or when the model fails, the chat falls back to the rules and says it is in simple mode.
 
 The API talks to any server that speaks the OpenAI chat format, chosen in `.env` (see `.env.example`): `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` and `LLM_TIMEOUT_SECONDS`. Leave `LLM_BASE_URL` empty to keep the model off.
 

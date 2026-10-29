@@ -41,13 +41,17 @@ def _data(text: str) -> str:
     return text.replace("<", " ").replace(">", " ")
 
 
+def could_be_a_quantity(text: str) -> bool:
+    """True when a normalised question is about fire and does not ask how or why, so a count may answer it."""
+    return bool(ABOUT_FIRE.search(text)) and not NOT_A_QUANTITY.search(text)
+
+
 def question_from_model(model: ModelClient, message: str, places: PlaceIndex) -> Question | None:
     """The question as the model understood it, or None when it gave a well-formed answer we cannot use.
 
     Raises ModelUnavailable when the model failed or answered in something unreadable.
     """
-    text = normalize(message)
-    if not ABOUT_FIRE.search(text) or NOT_A_QUANTITY.search(text):
+    if not could_be_a_quantity(normalize(message)):
         return None  # not something a count or a ranking could answer; no need to ask
     if asks_for_a_period_the_map_lacks(message):
         return Question(Intent.UNSUPPORTED_WINDOW)  # no need to ask either
