@@ -641,6 +641,25 @@ body:has(.landing) {
   text-underline-offset: 2px;
 }
 
+.landing-notice {
+  max-width: 62ch;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 56px) calc(48px + env(safe-area-inset-bottom, 0px));
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-body);
+  text-align: center;
+}
+
+.landing-notice p {
+  margin: 0 0 6px;
+}
+
+.landing-notice a {
+  color: inherit;
+  text-underline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .facts-badge-ticks {
     animation: none;

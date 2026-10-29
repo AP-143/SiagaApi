@@ -1,3 +1,25 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+# What the Vercel deployment installs: it reads this list and ignores requirements.txt when both exist.
+# Docker and the tests use requirements.txt, so every package here must also be there (a test checks it).
+# No uvicorn (Vercel runs the app itself) and no pytest.
+[project]
+name = "siagaapi-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "psycopg[binary,pool]>=3.2",
+    "httpx>=0.27",
+    "ijson>=3.3",
+    "pyshp>=2.3",
+    "fastembed>=0.7",
+]
+
+[tool.vercel]
+entrypoint = "vercel_app:app"
+
+[tool.vercel.scripts]
+build = "python scripts/fetch_embedding_model.py"

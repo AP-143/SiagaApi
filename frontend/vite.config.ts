@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  // The folder the site is served from: "/" normally, "/SiagaApi/" on GitHub Pages.
+  base: process.env.VITE_BASE_PATH || "/",
   plugins: [react()],
   server: {
     // File events do not cross a Docker bind mount on Windows/macOS, so poll for changes.

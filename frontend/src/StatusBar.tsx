@@ -1,6 +1,26 @@
+import { useEffect, useState } from "react";
+
 import type { Freshness } from "./api";
 import { AlertIcon, ClockIcon } from "./icons";
 import { formatInZone } from "./map/time";
+
+// The free server sleeps when nobody has visited for a while and takes about a minute to wake. After
+// this long without an answer the page says so, instead of looking stuck.
+export const WAKING_AFTER_MS = 8000;
+
+/** True once `loading` has lasted longer than WAKING_AFTER_MS; back to false as soon as it stops. */
+function useWaking(loading: boolean): boolean {
+  const [waking, setWaking] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setWaking(false);
+      return;
+    }
+    const timer = setTimeout(() => setWaking(true), WAKING_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [loading]);
+  return waking;
+}
 
 export type FreshnessState = Freshness | "unknown" | null;
 
@@ -27,12 +47,17 @@ function Alert({ children }: { children: string }) {
 export default function StatusBar({ freshness, loadFailed, loading, notes = [], imageryDate = null }: Props) {
   const known = freshness && freshness !== "unknown" ? freshness : null;
   const lastUpdated = known?.last_updated ?? null;
+  const waking = useWaking(loading);
   return (
     <div className="status-bar">
       {loading && (
         <p role="status" className="pill pill-loading">
           <span className="spinner" aria-hidden="true" />
-          <span>Memuat titik api…</span>
+          <span>
+            {waking
+              ? "Server sedang bangun, mohon tunggu sebentar…"
+              : "Memuat titik api…"}
+          </span>
         </p>
       )}
       {lastUpdated && (

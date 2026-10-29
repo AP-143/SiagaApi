@@ -31,7 +31,7 @@ def evaluate_model(model_name: str | None, verbose: bool, repair: bool = False) 
     model = OpenAICompatibleClient(settings.llm_base_url, name, settings.llm_api_key, settings.llm_timeout_seconds)
     try:
         with psycopg.connect(settings.database_url) as conn:
-            load_knowledge(conn, settings.knowledge_dir)  # the questions are asked of the real documents
+            load_knowledge(conn, settings.knowledge_dir, settings.knowledge_exclude)  # the questions are asked of the real documents
             now = datetime.now(timezone.utc)
             if repair:
                 print(format_repair_report(name, run_repair_cases(conn, model, repair_cases(), now), verbose))
@@ -114,10 +114,11 @@ def main() -> None:
             f"{result.outside_region} outside every Province (left untouched)."
         )
     elif args.command == "load-knowledge":
-        directory = args.directory or load_settings().knowledge_dir
+        settings = load_settings()
+        directory = args.directory or settings.knowledge_dir
         try:
             with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
-                count = load_knowledge(conn, directory)
+                count = load_knowledge(conn, directory, settings.knowledge_exclude)
         except KnowledgeError as error:
             raise SystemExit(f"Knowledge not loaded: {error}")
         print(f"Loaded {count} passages from {directory}.")

@@ -184,7 +184,7 @@ The chat has its own bucket, apart from the map: 20 questions per minute per cli
 
 ## Not built yet
 
-1. **Hosting.** Where the API, the database and the model run in production is a separate piece of work. Free options found (October 2026): a single Oracle Cloud Always Free ARM VM (2 OCPU and 12 GB, needs a card for sign-up) can run everything including a small local model, slowly; without a card, a static frontend plus a free hosted database plus a free hosted model API is possible but leaves the always-on API without a home. Re-check all of it before relying on it.
+1. **Hosting.** Decided in ADR 0005 and planned in `.scratch/hosting/` (Vercel, Neon and GitHub Actions, all free and with no card). It runs the chat on rules and the embedding search, with no language model and the two health documents excluded, so **a language model on the public site is still open**: the free host has no GPU, so it would be a hosted free API, with its data terms checked and the quality measured by `evaluate-model` first. (Oracle Cloud Always Free was dropped because it asks for a billing address.)
 2. **pgvector,** only if the knowledge base grows to thousands of passages (the embeddings are plain arrays today, compared in the application).
 3. **More documents.** BNPB, KLHK, Manggala Agni and BMKG guidance, and the newest Kemenkes statements, have to come from a document the project owner supplies or approves; those sites refuse automated access, so someone has to fetch the text.
 4. **A budget and a rate limit shared across several API processes** (today both counters, and the explanation cache, are per process), and a cost cap if a paid model is ever used.

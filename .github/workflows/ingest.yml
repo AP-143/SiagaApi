@@ -1,0 +1,44 @@
+name: Ingest hotspots
+
+# Fetches new Hotspots from NASA FIRMS into the public database, once per run (`ingest` without --loop).
+#
+# - GitHub only runs a schedule from the default branch, so this starts after the branch is merged.
+# - A scheduled run can start several minutes late, and GitHub switches scheduled workflows off after 60 days
+#   without any activity in the repository: open the Actions tab and press "Enable workflow" to turn it back on.
+# - It needs two repository secrets: DATABASE_URL (the UNPOOLED Neon address) and FIRMS_MAP_KEY.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never two runs at once, and a run in progress is allowed to finish.
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - run: pip install -r requirements.txt
+
+      # Prints how many detections were fetched and stored, and never the secrets.
+      - run: python -m app.cli ingest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}

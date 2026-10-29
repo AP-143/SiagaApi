@@ -1,3 +1,4 @@
+import { withBase } from "./base";
 import LogoMark from "./LogoMark";
 import SplitText from "./landing/SplitText";
 
@@ -5,7 +6,7 @@ import SplitText from "./landing/SplitText";
 export default function Brand() {
   return (
     <header className="card brand">
-      <a className="brand-home" href="/" aria-label="Kembali ke beranda SiagaApi">
+      <a className="brand-home" href={withBase("/")} aria-label="Kembali ke beranda SiagaApi">
         <span className="brand-mark">
           <LogoMark />
         </span>

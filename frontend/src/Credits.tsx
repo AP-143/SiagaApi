@@ -1,8 +1,8 @@
 import { InfoIcon } from "./icons";
+import { NOTICE } from "./notice";
 import { isBarViewport } from "./viewport";
 
-const CREDITS =
-  "Titik api: NASA FIRMS (VIIRS). Batas wilayah: OCHA / BPS, COD-AB Indonesia (CC BY-IGO). Lahan gambut: Kementerian Pertanian (BBSDLP) melalui BIG Satu Peta. Citra satelit: NASA EOSDIS GIBS. Peta dasar: © OpenStreetMap contributors. Peta ditenagai MapLibre.";
+const CREDITS = `Titik api: NASA FIRMS (VIIRS). Batas wilayah: OCHA / BPS, COD-AB Indonesia (CC BY-IGO). Lahan gambut: Kementerian Pertanian (BBSDLP) melalui BIG Satu Peta. Citra satelit: NASA EOSDIS GIBS. Peta dasar: © OpenStreetMap contributors. Peta ditenagai MapLibre. ${NOTICE}`;
 
 /**
  * Credits that the data licenses ask for, including the base map's own attribution: the map's built-in

@@ -1,6 +1,7 @@
 import { m, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 
+import { withBase } from "../base";
 import ImageSlot from "./ImageSlot";
 import { LANDING_IMAGES } from "./images";
 import Reveal from "./Reveal";
@@ -33,7 +34,7 @@ const TICKS = Array.from({ length: 48 }, (_, i) => {
 /** A ring of 48 ticks that turns once every 16 seconds, with an arrow to the map in the middle. */
 function Badge() {
   return (
-    <a className="facts-badge" href="/peta">
+    <a className="facts-badge" href={withBase("/peta")}>
       <span className="facts-badge-dial" aria-hidden="true">
         <svg className="facts-badge-ticks" viewBox="0 0 84 84" width="84" height="84" focusable="false">
           {TICKS.map((tick, i) => (

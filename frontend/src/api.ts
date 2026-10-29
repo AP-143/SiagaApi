@@ -1,3 +1,4 @@
+import { apiUrl } from "./base";
 import type { Filters } from "./filters";
 
 export type Confidence = "low" | "nominal" | "high";
@@ -22,7 +23,7 @@ export type HotspotCollection = GeoJSON.FeatureCollection<GeoJSON.Point, Hotspot
 export type Area = { code: string; name: string };
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(`/api${path}`);
+  const response = await fetch(apiUrl(path));
   if (!response.ok) throw new Error(`Request for ${path} failed with status ${response.status}`);
   return response.json();
 }
@@ -104,7 +105,7 @@ export type ChatTurn = { role: "user" | "assistant"; text: string };
 export async function sendChat(message: string, history: ChatTurn[] = []): Promise<ChatReply> {
   let response: Response;
   try {
-    response = await fetch("/api/chat", {
+    response = await fetch(apiUrl("/chat"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // The first question has no history, and then says no more than it always did.

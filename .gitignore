@@ -13,3 +13,9 @@ __pycache__/
 # Node
 node_modules/
 dist/
+.neon
+
+# Built by the Vercel deployment (backend/scripts/fetch_embedding_model.py)
+backend/model/
+.vercel
+.env.local

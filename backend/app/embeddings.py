@@ -5,6 +5,7 @@ nothing, sends no text anywhere, and works with no network. It is multilingual, 
 Indonesian needs. Keep the name in step with the Dockerfile, which downloads it at build time.
 """
 
+import os
 from functools import lru_cache
 
 import numpy as np
@@ -16,6 +17,11 @@ MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 def _model():
     from fastembed import TextEmbedding
 
+    # A serverless deployment ships the model as one flat folder (scripts/fetch_embedding_model.py) and
+    # names it here; the Docker image instead has it in fastembed's download cache, found by name.
+    path = os.environ.get("EMBEDDING_MODEL_PATH")
+    if path:
+        return TextEmbedding(MODEL_NAME, specific_model_path=path)
     return TextEmbedding(MODEL_NAME)
 
 
