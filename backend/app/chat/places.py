@@ -97,6 +97,8 @@ class PlaceIndex:
                 self._names.append((alias, area))
         # What a name can start with, for splitting a preposition stuck to it ("dikalimantan utara").
         self._starts = {norm.split()[0] for norm, _ in self._names} | {norm for norm, _ in self._names}
+        # Every word of every name, so the word repair can leave a place word to the place repair.
+        self.words = {w for norm, _ in self._names for w in [*norm.split(), norm] if len(w) >= 4}
         self._tokens: dict[str, set[Area]] = {}
         for norm, area in self._names:
             for token in norm.split():

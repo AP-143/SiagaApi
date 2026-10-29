@@ -159,12 +159,11 @@ function modelWrittenParts(reply: ChatReply): { modelWritten?: boolean; quote?: 
 export function takeReadingNote(reply: ChatReply): { reply: ChatReply; readingNote?: string } {
   const readAs = reply.data.read_as as { typed?: unknown; as?: unknown } | undefined;
   if (!readAs || typeof readAs.typed !== "string" || typeof readAs.as !== "string") return { reply };
-  const note = `Saya membaca '${readAs.typed}' sebagai ${readAs.as}.`;
-  const ending = `
-
-${note}`;
-  if (!reply.answer.endsWith(ending)) return { reply };
-  return { reply: { ...reply, answer: reply.answer.slice(0, -ending.length) }, readingNote: note };
+  // The note is the last paragraph: one sentence for each thing that was repaired.
+  const at = reply.answer.lastIndexOf("\n\n");
+  const note = at < 0 ? "" : reply.answer.slice(at + 2);
+  if (!note.startsWith("Saya membaca '")) return { reply };
+  return { reply: { ...reply, answer: reply.answer.slice(0, at) }, readingNote: note };
 }
 
 function followUps(reply: ChatReply, asked: string) {

@@ -157,16 +157,16 @@ def answer_question(
     return answers.unsupported_reply()
 
 
-def _with_reading_note(reply: dict, read_as: tuple[str, str] | None) -> dict:
-    """Say how a misspelled place was read: plain text after the answer, and in the data."""
-    if read_as is None:
+def _with_reading_note(reply: dict, readings: list[tuple[str, str]]) -> dict:
+    """Say how a misspelled word or place was read: plain text after the answer, and in the data."""
+    if not readings:
         return reply
-    typed, name = read_as
-    note = f"Saya membaca '{typed}' sebagai {name}."
+    note = " ".join(f"Saya membaca '{typed}' sebagai {read}." for typed, read in readings)
+    as_data = [{"typed": typed, "as": read} for typed, read in readings]
     return {
         **reply,
         "answer": f"{reply['answer']}\n\n{note}",
-        "data": {**reply["data"], "read_as": {"typed": typed, "as": name}},
+        "data": {**reply["data"], "read_as": as_data[0], "readings": as_data},
     }
 
 
@@ -174,11 +174,11 @@ def _answer_understood(conn: psycopg.Connection, question: Question, now: dateti
     """The reply for a question we know how to answer from the database, else None."""
     match question.intent:
         case Intent.COUNT:
-            return _with_reading_note(_count(conn, question, now), question.read_as)
+            return _with_reading_note(_count(conn, question, now), question.readings)
         case Intent.RANKING:
-            return _with_reading_note(_ranking(conn, question, now), question.read_as)
+            return _with_reading_note(_ranking(conn, question, now), question.readings)
         case Intent.FRESHNESS:
-            return answers.freshness_reply(queries.freshness(conn, now))
+            return _with_reading_note(answers.freshness_reply(queries.freshness(conn, now)), question.readings)
         case Intent.GREETING:
             return answers.greeting_reply()
         case Intent.CLARIFY:
