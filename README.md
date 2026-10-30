@@ -49,9 +49,9 @@ cd frontend && npm install && npm test
 
 ## Settings for a public deployment
 
-The public site (plan in `docs/adr/0005-*.md`) serves the frontend from another website than the API. These settings are off by default, so local development is unchanged; all are listed in `.env.example`.
+The public site (plan in `docs/adr/0005-*.md`) serves the frontend from another website than the API. These settings are off by default, so local development is unchanged; all are listed in `.env.example`. How the live site is run (the parts, where each setting lives, deploys, the schedule, limits) is in `docs/hosting.md`.
 
-- `TRUST_FORWARDED_FOR=true` (API): count each visitor for the rate limits by the right-most `X-Forwarded-For` entry. Turn it on only behind a proxy that adds that entry (Render does).
+- `TRUST_FORWARDED_FOR=true` (API): count each visitor for the rate limits by the right-most `X-Forwarded-For` entry. Turn it on only behind a proxy that adds that entry (Vercel does).
 - `CORS_ALLOWED_ORIGINS` (API): the website address(es) allowed to call the API, comma separated.
 - `VITE_API_BASE_URL` (frontend build): the API address; empty keeps the `/api` dev proxy.
 - `VITE_BASE_PATH` (frontend build): the folder the site is served from, for example `/SiagaApi/` on GitHub Pages; default `/`.

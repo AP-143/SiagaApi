@@ -21,3 +21,5 @@ Spec: `../spec.md` (decisions 3, 5; "What the spike proved")
 ## Comments
 
 Real deploy of `backend/` (project `siagaapi-api`, 2026-10-30): the build took 15 s (model copy 252 MB), Vercel reported "exceeds the standard size limit; enabling large functions (beta)" and went ahead. Warm requests 0.14 to 1.1 s from this machine in Indonesia; the first chat question needing the embedding model about 1 s. The cold start after a long idle is not measured yet (ticket 09).
+
+Cold start after 20 minutes idle, measured 2026-10-30: first `/health` 2.4 s, the next ones 0.1 s (the first request of an earlier, shorter pause: 2.5 s). Well under the 8 s waking message.

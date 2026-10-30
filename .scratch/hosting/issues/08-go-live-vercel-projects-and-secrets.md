@@ -1,6 +1,6 @@
 # Go live: the two Vercel projects, the firewall rule and the secrets
 
-Status: claimed
+Status: resolved
 Blocked by: 04, 05, 06, 07
 
 Spec: `../spec.md` (decisions 1, 3, 6, 7)
@@ -28,3 +28,5 @@ The agent does the rest: create the project `siagaapi-api` (root `backend/`, env
 2026-10-30, done: project `siagaapi-api` (https://siagaapi-api.vercel.app, environment set from files) and project `siagaapi` (https://siagaapi.vercel.app); the WAF rule "Rate limit per IP" (200 requests per 60 s per IP) is published and was checked live (230 quick requests: 200 allowed, 30 answered 429); the owner approved the first public deploy; the spike is deleted.
 
 Still to do by the owner (the agent was not allowed to write to the secret store, and the FIRMS key can only be requested by the owner): request a new FIRMS MAP_KEY for the server, then add the repository secrets `DATABASE_URL` (the UNPOOLED Neon address) and `FIRMS_MAP_KEY` (Settings, Secrets and variables, Actions), then merge the pull request so the schedule starts.
+
+2026-10-30, finished: the owner requested the FIRMS server key and set the secrets `DATABASE_URL` and `FIRMS_MAP_KEY`, and the pull requests 4 and 5 are merged. After a GitHub Login Connection, both Vercel projects were linked to this repository with `vercel git connect` (production branch `main`, root directories `backend` and `frontend`, preview deployments off); the merge of pull request 5 deployed both projects by itself and `/health`, `/`, `/peta` and a chat question answered after it.
