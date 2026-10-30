@@ -8,7 +8,9 @@ name: Ingest hotspots
 # - It needs two repository secrets: DATABASE_URL (the UNPOOLED Neon address) and FIRMS_MAP_KEY.
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    # Minutes 7 and 37, not 0 and 30: GitHub is busiest at the top of the hour and the half hour, and skips
+    # or delays scheduled runs then (none of the ticks at :00 and :30 started in the first two hours here).
+    - cron: "7,37 * * * *"
   workflow_dispatch:
 
 permissions:

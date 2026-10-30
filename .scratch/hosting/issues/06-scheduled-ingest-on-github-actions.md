@@ -22,3 +22,5 @@ Use the unpooled URL for the secret. Note in the workflow comments that Actions 
 Written (`.github/workflows/ingest.yml`) and linted clean with actionlint. Still to do after the merge to `main` and the secrets in ticket 08: one manual run, and the second run from the schedule.
 
 2026-10-30: the first manual run was cancelled after 10 minutes (3,600 single-row inserts from a US runner to Singapore). Fixed in pull request 5 (one `INSERT ... FROM unnest(...)`); the manual run after the fix succeeded in 26 s ("Fetched 3633 detections, stored 0 new Hotspots"). Both secrets are set. Still open: GitHub had not started a scheduled run 1.5 hours after the merge (ticks at 23:00, 00:00 UTC missing; the workflow is active and the cron is on `main`), so the "two scheduled runs" check is not done yet.
+
+2026-10-30: no scheduled run started in the first two hours after the merge (ticks at :00 and :30 all missing). The cron moved to minutes 7 and 37, away from the busy ticks.
